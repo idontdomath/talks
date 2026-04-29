@@ -1,0 +1,1464 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Spec-driven development con coding agents</title>
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+:root {
+  --bg: #000;
+  --bg-elev: #0d0d0f;
+  --bg-card: #131318;
+  --text: #f3f4f7;
+  --dim: #8b8e98;
+  --light: #b6b9c2;
+  --line: #232329;
+  --blue: #0a84ff;
+  --green: #30d158;
+  --orange: #ff9f0a;
+  --purple: #bf5af2;
+  --red: #ff453a;
+  --teal: #64d2ff;
+  --pink: #ff375f;
+}
+html, body {
+  width: 100%; height: 100%; overflow: hidden;
+  font-family: 'Inter', 'SF Pro Display', system-ui, -apple-system, 'Helvetica Neue', sans-serif;
+  background: var(--bg); color: var(--text);
+  font-size: 19px; line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+@font-face { font-family: 'Inter'; font-weight: 100 900; font-style: normal; font-display: swap;
+             src: url('https://rsms.me/inter/font-files/InterVariable.woff2') format('woff2'); }
+.deck { position: relative; width: 100vw; height: 100vh; }
+
+/* Slide chrome */
+.slide {
+  position: absolute; inset: 0; display: none;
+  flex-direction: column; padding: 3.5rem 4.5rem 3rem;
+}
+.slide.active { display: flex; }
+.slide.cover { padding: 0; background: radial-gradient(circle at 22% 20%, #0d1a2b 0%, #000 55%); }
+
+/* Header */
+.hdr { display: flex; justify-content: space-between; align-items: center;
+       margin-bottom: 1.6rem; color: var(--dim); font-size: 0.9rem; }
+.eyebrow { letter-spacing: 0.14em; text-transform: uppercase; font-weight: 600; color: var(--light); }
+.page { font-variant-numeric: tabular-nums; color: var(--dim); }
+
+/* Titles */
+.title-block { margin-bottom: 1.4rem; }
+.title-block .kicker { color: var(--blue); font-weight: 600; font-size: 0.95rem;
+                       letter-spacing: 0.04em; margin-bottom: 0.3rem; }
+.slide h1 { font-size: 2.85rem; font-weight: 700; line-height: 1.08; letter-spacing: -0.02em; }
+.slide h2 { font-size: 1.7rem; font-weight: 700; line-height: 1.18; letter-spacing: -0.01em; }
+.slide h3 { font-size: 1.2rem; font-weight: 700; margin-bottom: 0.5rem; }
+.slide p { font-size: 1.05rem; }
+.slide .lede { font-size: 1.25rem; color: var(--light); margin-bottom: 1.4rem; max-width: 60rem; }
+
+/* Layout helpers */
+.grow { flex: 1; }
+.cols-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1.2rem; }
+.cols-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1.2rem; }
+.mt-1 { margin-top: 0.6rem; }
+.mt-2 { margin-top: 1.1rem; }
+.mt-3 { margin-top: 1.6rem; }
+.dim { color: var(--dim); }
+.light { color: var(--light); }
+.small { font-size: 0.95rem; }
+
+/* Cards */
+.card { background: var(--bg-card); border-radius: 14px; padding: 1.4rem 1.5rem;
+        display: flex; flex-direction: column; gap: 0.5rem; position: relative; overflow: hidden; }
+.card .stripe { position: absolute; top: 0; left: 0; right: 0; height: 4px; }
+.card .big-num { font-size: 2.4rem; font-weight: 800; line-height: 1; color: var(--text);
+                 letter-spacing: -0.04em; margin-bottom: 0.2rem; }
+
+/* Bg accents */
+.bg-blue { background: var(--blue); } .bg-green { background: var(--green); }
+.bg-orange { background: var(--orange); } .bg-purple { background: var(--purple); }
+.bg-red { background: var(--red); } .bg-teal { background: var(--teal); }
+.blue { color: var(--blue); } .green { color: var(--green); }
+.orange { color: var(--orange); } .purple { color: var(--purple); }
+.red { color: var(--red); } .teal { color: var(--teal); }
+
+/* Callouts */
+.callout { display: flex; align-items: stretch; gap: 1rem; padding: 1rem 1.2rem;
+           background: #0f0f13; border-radius: 12px; }
+.callout .bar { width: 4px; border-radius: 2px; flex-shrink: 0; }
+.callout strong { font-weight: 700; }
+
+/* Role tag */
+.role-tag { display: inline-block; padding: 0.2rem 0.7rem; border-radius: 999px;
+            font-size: 0.85rem; font-weight: 600; letter-spacing: 0.02em;
+            background: rgba(255,255,255,0.06); margin-bottom: 0.6rem; }
+.role-tag.blue { color: var(--blue); border: 1px solid rgba(10,132,255,0.35); }
+.role-tag.purple { color: var(--purple); border: 1px solid rgba(191,90,242,0.35); }
+.role-tag.orange { color: var(--orange); border: 1px solid rgba(255,159,10,0.35); }
+
+/* Prompt / code blocks */
+.prompt, .mono-block {
+  font-family: 'JetBrains Mono', 'SF Mono', Menlo, monospace;
+  background: #0a0a0d; border: 1px solid var(--line); border-radius: 10px;
+  padding: 0.9rem 1rem; font-size: 0.9rem; line-height: 1.5;
+  color: var(--light); white-space: pre-wrap;
+}
+.prompt em { color: var(--text); font-style: normal; font-weight: 700; }
+
+/* Cover */
+.cover-grid { display: grid; height: 100%; grid-template-rows: 1fr auto auto auto;
+              gap: 1.4rem; padding: 5rem 6rem 4rem; align-content: end; }
+.cover-meta { display: flex; align-items: center; gap: 0.6rem; }
+.cover-meta .label { letter-spacing: 0.18em; text-transform: uppercase;
+                     font-weight: 600; font-size: 0.85rem; color: var(--light); }
+.dot { width: 10px; height: 10px; border-radius: 50%; background: var(--blue); }
+.cover-title { font-size: 5rem; font-weight: 800; line-height: 1.02; letter-spacing: -0.035em; }
+.cover-quote { font-size: 1.35rem; color: var(--light); max-width: 50rem;
+               border-left: 3px solid var(--blue); padding-left: 1rem; }
+.cover-quote .quote-mark { color: var(--blue); font-size: 1.6rem; margin-right: 0.2rem; }
+.cover-foot { display: flex; gap: 2.5rem; color: var(--text); font-size: 0.95rem;
+              padding-top: 1rem; border-top: 1px solid var(--line); }
+.cover-footer { position: absolute; right: 4.5rem; bottom: 2rem; color: var(--dim); }
+
+/* Default body fallback */
+.raw-body { display: flex; flex-direction: column; gap: 0.35rem; max-width: 70rem; }
+.raw-body .section-head { margin-top: 0.8rem; color: var(--light);
+                          font-size: 1.05rem; letter-spacing: 0.02em; }
+.raw-body .num-row { display: flex; align-items: baseline; gap: 0.6rem; margin-top: 0.6rem; }
+.raw-body .num-tag { font-size: 1.4rem; font-weight: 800; color: var(--blue);
+                     min-width: 2rem; }
+.raw-body .num-text { font-size: 1.1rem; font-weight: 600; }
+.raw-body .bullet { font-size: 1.05rem; }
+.raw-body .arrow { font-size: 0.95rem; color: var(--dim); padding-left: 1rem; font-style: italic; }
+.raw-body blockquote { font-size: 1.15rem; font-style: italic; color: var(--light);
+                       border-left: 3px solid var(--blue); padding-left: 0.9rem; margin: 0.4rem 0; }
+.raw-body .line { color: var(--text); }
+.raw-body .indent { padding-left: 1.2rem; color: var(--light); }
+.raw-body .gap { height: 0.45rem; }
+.raw-body .mono-block { white-space: pre; font-size: 0.85rem; }
+
+/* Three-questions list (slide 5) */
+.q-list { display: flex; flex-direction: column; gap: 0.9rem; justify-content: center; }
+.q-row { display: flex; align-items: center; gap: 1.6rem; padding: 1.1rem 1.4rem;
+         background: var(--bg-card); border-radius: 14px; border-left: 4px solid transparent; }
+.q-row:nth-child(1) { border-left-color: var(--blue); }
+.q-row:nth-child(2) { border-left-color: var(--purple); }
+.q-row:nth-child(3) { border-left-color: var(--green); }
+.q-num { font-size: 2.3rem; font-weight: 800; line-height: 1; letter-spacing: -0.04em;
+         min-width: 3rem; font-variant-numeric: tabular-nums; }
+.q-body h3 { font-size: 1.4rem; margin-bottom: 0.25rem; }
+.q-body h3 em { color: var(--orange); font-style: normal; }
+.q-body p { font-size: 1.02rem; }
+
+/* Ideation split (slide 6) */
+.left-col, .right-col { display: flex; flex-direction: column; }
+.checklist { list-style: none; display: flex; flex-direction: column; gap: 0.55rem;
+             margin-top: 1.1rem; }
+.checklist li { display: flex; gap: 0.7rem; align-items: baseline; font-size: 1.08rem; }
+.checklist .check { font-weight: 800; flex-shrink: 0; width: 1rem; text-align: center; }
+.prompt-card { background: var(--bg-card); border-radius: 14px; overflow: hidden;
+               box-shadow: 0 12px 30px rgba(0,0,0,0.45); }
+.prompt-head { display: flex; align-items: center; gap: 0.4rem; padding: 0.6rem 0.9rem;
+               background: #1a1a20; border-bottom: 1px solid var(--line); font-size: 0.8rem; }
+.prompt-head .dot { width: 11px; height: 11px; border-radius: 50%; }
+.dot-red { background: var(--red); }
+.prompt-head .prompt-title { color: var(--dim); margin-left: 0.6rem;
+                             font-family: 'JetBrains Mono', monospace; }
+.prompt.big { font-size: 1rem; padding: 1.1rem 1.2rem; border: none; border-radius: 0;
+              background: transparent; }
+
+/* Seven elements (slide 7) */
+.elem-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.7rem 1.4rem; align-content: center; }
+.elem-row { display: flex; align-items: baseline; gap: 0.9rem;
+            padding: 0.7rem 0.9rem; border-radius: 10px; background: rgba(255,255,255,0.025); }
+.elem-row.is-key { background: rgba(48,209,88,0.08); border: 1px solid rgba(48,209,88,0.25); }
+.elem-num { font-size: 1.2rem; font-weight: 800; color: var(--blue);
+            min-width: 2.2rem; font-variant-numeric: tabular-nums; }
+.elem-row.is-key .elem-num { color: var(--green); }
+.elem-body h3 { font-size: 1.05rem; margin-bottom: 0.15rem; }
+.elem-body p { font-size: 0.92rem; }
+.key-tag { display: inline-block; font-size: 0.7rem; padding: 0.1rem 0.5rem;
+           border-radius: 999px; background: rgba(48,209,88,0.15); color: var(--green);
+           font-weight: 700; letter-spacing: 0.04em; margin-left: 0.4rem; vertical-align: middle; }
+.meta-row { display: flex; gap: 0.6rem; flex-wrap: wrap; }
+.meta-pill { padding: 0.45rem 0.9rem; border-radius: 999px;
+             background: rgba(255,255,255,0.05); border: 1px solid var(--line);
+             font-size: 0.85rem; color: var(--light); }
+.meta-pill strong { color: var(--text); margin-right: 0.3rem; }
+
+/* Critique loop (slide 8) */
+.loop { display: flex; flex-direction: column; gap: 1rem; align-items: stretch; }
+.loop-start { text-align: center; }
+.loop-pill { display: inline-block; padding: 0.5rem 1.4rem; border-radius: 999px;
+             background: rgba(10,132,255,0.15); border: 1px solid rgba(10,132,255,0.4);
+             color: var(--blue); font-weight: 700; font-size: 0.95rem; }
+.loop-rounds { display: grid; grid-template-columns: 1fr auto 1fr auto 1fr; gap: 0.6rem;
+               align-items: stretch; }
+.round-card { background: var(--bg-card); border-radius: 14px; padding: 1.1rem 1.2rem;
+              display: flex; flex-direction: column; gap: 0.45rem; }
+.round-tag { display: inline-block; align-self: flex-start; padding: 0.15rem 0.6rem;
+             border-radius: 6px; font-size: 0.75rem; font-weight: 700;
+             letter-spacing: 0.05em; text-transform: uppercase; margin-bottom: 0.2rem; }
+.round-tag.blue   { background: rgba(10,132,255,0.18); color: var(--blue); }
+.round-tag.purple { background: rgba(191,90,242,0.18); color: var(--purple); }
+.round-tag.teal   { background: rgba(100,210,255,0.18); color: var(--teal); }
+.round-card h3 { font-size: 1.15rem; }
+.round-arrow { display: flex; align-items: center; color: var(--dim);
+               font-size: 0.78rem; font-style: italic; padding: 0 0.2rem; }
+
+/* Compare cards (slide 10) */
+.card.compare { display: flex; flex-direction: column; gap: 0.7rem; }
+.compare-head { display: flex; align-items: center; gap: 0.5rem; font-weight: 700;
+                font-size: 1.1rem; letter-spacing: -0.01em; }
+.compare-icon { width: 1.5rem; height: 1.5rem; border-radius: 50%; display: inline-flex;
+                align-items: center; justify-content: center; font-weight: 800; font-size: 0.95rem; }
+.compare-icon.red   { background: rgba(255,69,58,0.18); color: var(--red); }
+.compare-icon.green { background: rgba(48,209,88,0.18); color: var(--green); }
+.card.compare.bad   { border: 1px solid rgba(255,69,58,0.25); }
+.card.compare.good  { border: 1px solid rgba(48,209,88,0.30); }
+
+/* Three-tier boundaries (slide 11) */
+.card.tier { display: flex; flex-direction: column; gap: 0.55rem; }
+.tier-head { display: flex; align-items: center; gap: 0.55rem; font-size: 1.2rem;
+             font-weight: 700; letter-spacing: -0.01em; }
+.tier-icon { width: 1.6rem; height: 1.6rem; border-radius: 50%; display: inline-flex;
+             align-items: center; justify-content: center; font-weight: 800; }
+.tier-icon.green  { background: rgba(48,209,88,0.18); color: var(--green); }
+.tier-icon.orange { background: rgba(255,159,10,0.18); color: var(--orange); }
+.tier-icon.red    { background: rgba(255,69,58,0.18); color: var(--red); }
+.tier-sub { font-size: 0.95rem; }
+.tier-always { border-top: 3px solid var(--green); }
+.tier-ask    { border-top: 3px solid var(--orange); }
+.tier-never  { border-top: 3px solid var(--red); }
+.prompt.mini { font-size: 0.85rem; padding: 0.7rem 0.9rem; line-height: 1.45; }
+
+/* Model settings — temperature scale (slide 12) */
+.temp-scale { display: flex; align-items: center; gap: 0.7rem; margin-bottom: 0.6rem; }
+.temp-label { color: var(--dim); font-variant-numeric: tabular-nums; font-size: 0.85rem;
+              font-family: 'JetBrains Mono', monospace; }
+.temp-bar { flex: 1; display: grid; grid-template-columns: 1fr 1fr; height: 56px;
+            border-radius: 10px; overflow: hidden; border: 1px solid var(--line); }
+.temp-zone { display: flex; flex-direction: column; align-items: center; justify-content: center;
+             padding: 0.4rem; gap: 0.15rem; }
+.temp-zone-label { font-weight: 700; font-size: 0.95rem; }
+.temp-zone-range { font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; opacity: 0.85; }
+.temp-low  { background: linear-gradient(90deg, rgba(10,132,255,0.35), rgba(10,132,255,0.18)); color: var(--blue); }
+.temp-high { background: linear-gradient(90deg, rgba(191,90,242,0.18), rgba(255,69,58,0.32)); color: #ffd0c8; }
+.phase-card { gap: 0.5rem; }
+.phase-tag { display: inline-block; align-self: flex-start; padding: 0.18rem 0.65rem;
+             border-radius: 999px; font-size: 0.78rem; font-weight: 700;
+             letter-spacing: 0.04em; text-transform: uppercase; }
+.phase-tag.purple { background: rgba(191,90,242,0.18); color: var(--purple); }
+.phase-tag.blue   { background: rgba(10,132,255,0.18); color: var(--blue); }
+.setting-list { list-style: none; display: flex; flex-direction: column; gap: 0.25rem;
+                margin-top: 0.4rem; font-size: 0.95rem; }
+.setting-list strong { color: var(--text); margin-right: 0.4rem; min-width: 8.5rem;
+                       display: inline-block; }
+.setting-list li { color: var(--light); }
+.callout.news em { color: var(--text); font-style: italic; }
+
+/* Spec → planning flow (slide 13) */
+.flow { display: grid; grid-template-columns: 1fr auto 1fr auto 1.4fr auto 1fr;
+        gap: 0.8rem; align-items: stretch; }
+.flow-step { background: var(--bg-card); border-radius: 14px; padding: 1.2rem 1rem;
+             display: flex; flex-direction: column; align-items: center; gap: 0.4rem;
+             text-align: center; }
+.flow-step.flow-output { text-align: left; align-items: flex-start; }
+.flow-step.flow-cmd { background: #060608; border: 1px solid var(--line); }
+.flow-icon { font-size: 1.6rem; line-height: 1; }
+.flow-label { font-weight: 700; font-size: 1rem; }
+.flow-sub { font-size: 0.85rem; }
+.flow-sub code { background: rgba(255,255,255,0.07); padding: 0 0.3rem;
+                 border-radius: 4px; font-family: 'JetBrains Mono', monospace;
+                 font-size: 0.85em; color: var(--green); }
+.flow-arrow { display: flex; align-items: center; color: var(--dim); font-size: 1.5rem; }
+.prompt.cmd { font-size: 1.05rem; padding: 0.7rem 1rem; background: #000;
+              color: var(--green); border-color: #1a1a1f; }
+.output-list { list-style: none; display: flex; flex-direction: column; gap: 0.35rem;
+               margin-top: 0.2rem; font-size: 0.95rem; width: 100%; }
+.output-list .b { color: var(--green); margin-right: 0.5rem; font-weight: 800; }
+.callout.emphasis strong { color: var(--green); }
+
+/* Example timeline (slide 14) */
+.timeline { position: relative; display: flex; flex-direction: column; gap: 0.7rem;
+            padding-left: 0.4rem; }
+.timeline::before { content: ""; position: absolute; left: 1.7rem; top: 1.6rem; bottom: 1.6rem;
+                    width: 2px; background: repeating-linear-gradient(to bottom,
+                    var(--line) 0 6px, transparent 6px 12px); }
+.tl-row { display: flex; align-items: flex-start; gap: 1rem; position: relative; }
+.tl-marker { flex: 0 0 3.4rem; display: flex; justify-content: center; }
+.tl-num { width: 2.6rem; height: 2.6rem; border-radius: 50%; display: inline-flex;
+          align-items: center; justify-content: center; font-weight: 800; font-size: 1.15rem;
+          background: var(--bg); border: 2px solid currentColor; position: relative; z-index: 1; }
+.tl-num.blue   { color: var(--blue); }
+.tl-num.purple { color: var(--purple); }
+.tl-num.teal   { color: var(--teal); }
+.tl-num.green  { color: var(--green); }
+.tl-body { flex: 1; padding-top: 0.15rem; }
+.tl-body h3 { font-size: 1.2rem; margin-bottom: 0.25rem; }
+.tl-body p { font-size: 1rem; line-height: 1.55; }
+.tl-body code { background: rgba(255,255,255,0.06); padding: 0.05rem 0.4rem;
+                border-radius: 4px; font-family: 'JetBrains Mono', monospace; font-size: 0.85em; }
+.callout.contrast { display: grid; grid-template-columns: 1fr auto 1fr;
+                    align-items: center; padding: 0.9rem 1.4rem; gap: 1.2rem; }
+.contrast-cell { display: flex; flex-direction: column; align-items: center; gap: 0.1rem; }
+.contrast-time { font-size: 1.7rem; font-weight: 800; letter-spacing: -0.02em; }
+.contrast-cell.good .contrast-time { color: var(--green); }
+.contrast-cell.bad  .contrast-time { color: var(--red); }
+.contrast-label { font-size: 0.85rem; color: var(--dim); letter-spacing: 0.04em; }
+.contrast-vs { color: var(--dim); font-style: italic; font-size: 0.95rem; }
+
+/* Context building doc cards (slide 15) */
+.doc-card { background: var(--bg-card); border-radius: 14px; padding: 1.2rem 1.3rem;
+            display: flex; flex-direction: column; gap: 0.5rem; position: relative; overflow: hidden; }
+.doc-card::before { content: ""; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+                    background: linear-gradient(90deg, var(--blue), transparent); }
+.doc-card:nth-child(2)::before { background: linear-gradient(90deg, var(--purple), transparent); }
+.doc-card:nth-child(3)::before { background: linear-gradient(90deg, var(--green), transparent); }
+.doc-head { display: flex; align-items: center; gap: 0.55rem; padding-bottom: 0.6rem;
+            border-bottom: 1px solid var(--line); margin-bottom: 0.4rem; }
+.doc-icon { font-size: 1.2rem; }
+.doc-name { font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; color: var(--light); }
+.doc-card h3 { font-size: 1.2rem; }
+.doc-bullets { list-style: none; display: flex; flex-direction: column; gap: 0.3rem;
+               font-size: 0.95rem; color: var(--light); }
+.doc-bullets li { padding-left: 1rem; position: relative; }
+.doc-bullets li::before { content: "›"; position: absolute; left: 0; color: var(--dim); }
+.doc-bullets em { color: var(--text); font-style: normal; font-weight: 600; }
+
+/* Harness AGENTS.md mockup (slide 16) */
+.harness-list { list-style: none; display: flex; flex-direction: column; gap: 0.4rem;
+                margin-top: 1rem; font-size: 1.05rem; }
+.harness-list li { padding-left: 0.4rem; }
+.harness-list .b { display: inline-block; width: 1rem; font-weight: 800; }
+.harness-list .b.blue   { color: var(--blue); }
+.harness-list .b.green  { color: var(--green); }
+.harness-list .b.red    { color: var(--red); }
+.harness-list .b.orange { color: var(--orange); }
+.harness-list .b.purple { color: var(--purple); }
+.prompt.md { font-size: 0.92rem; line-height: 1.55; color: var(--light); }
+.md-h    { color: var(--blue); font-weight: 700; }
+.md-em   { color: var(--orange); font-weight: 600; }
+.md-warn { color: var(--red); font-weight: 700; text-transform: uppercase; font-size: 0.85em; }
+.callout.quote-cl { padding: 1rem 1.4rem; }
+.pullq { font-size: 1.15rem; line-height: 1.5; font-style: italic; color: var(--light);
+         border: none; padding: 0; margin: 0; }
+.pullq cite { display: block; margin-top: 0.5rem; font-style: normal; color: var(--dim);
+              font-size: 0.85rem; letter-spacing: 0.04em; }
+.pullq cite a { color: var(--blue); text-decoration: none;
+                border-bottom: 1px dotted rgba(10,132,255,0.45); }
+.pullq cite a:hover { border-bottom-color: var(--blue); }
+
+/* Iterative chat (slide 16.5) */
+.chat { display: flex; flex-direction: column; gap: 0.55rem; max-width: 60rem;
+        align-self: center; width: 100%; }
+.chat-bubble { padding: 0.7rem 1rem; border-radius: 14px; max-width: 78%;
+               display: flex; flex-direction: column; gap: 0.15rem; }
+.chat-bubble p { font-size: 1rem; line-height: 1.45; }
+.chat-who { font-size: 0.7rem; letter-spacing: 0.1em; text-transform: uppercase;
+            font-weight: 700; }
+.chat-bubble.user  { align-self: flex-end; background: rgba(10,132,255,0.16);
+                     border: 1px solid rgba(10,132,255,0.3); }
+.chat-bubble.user .chat-who  { color: var(--blue); }
+.chat-bubble.agent { align-self: flex-start; background: var(--bg-card);
+                     border: 1px solid var(--line); }
+.chat-bubble.agent .chat-who { color: var(--purple); }
+
+/* Red flags grid (slide 17) */
+.rf-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.8rem;
+           align-content: start; }
+.rf-card { display: flex; gap: 0.9rem; padding: 1rem 1.1rem;
+           background: var(--bg-card); border-radius: 12px;
+           border-left: 3px solid var(--red); }
+.rf-x { font-size: 1.3rem; color: var(--red); font-weight: 800; line-height: 1.4;
+        flex-shrink: 0; }
+.rf-body h3 { font-size: 1.02rem; margin-bottom: 0.2rem; line-height: 1.3; }
+.rf-body p { font-size: 0.92rem; line-height: 1.45; }
+
+/* Quick wins grid (slide 18) */
+.qw-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.55rem 1rem;
+           align-content: center; }
+.qw-row { display: flex; align-items: center; gap: 0.9rem;
+          padding: 0.7rem 0.95rem; background: var(--bg-card); border-radius: 10px; }
+.qw-num { font-size: 1.05rem; font-weight: 800; color: var(--green);
+          font-variant-numeric: tabular-nums; min-width: 2rem;
+          font-family: 'JetBrains Mono', monospace; }
+.qw-body { flex: 1; }
+.qw-body h3 { font-size: 1.02rem; margin-bottom: 0.15rem; }
+.qw-body code { background: rgba(255,255,255,0.07); padding: 0 0.35rem;
+                border-radius: 4px; font-family: 'JetBrains Mono', monospace; font-size: 0.85em; }
+.qw-body p { font-size: 0.9rem; }
+.qw-check { font-size: 1.1rem; font-weight: 800; flex-shrink: 0; }
+
+/* Recap + final message (slide 19) */
+.recap-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 0.6rem;
+              margin-bottom: 1.4rem; }
+.recap-pill { background: var(--bg-card); border-radius: 12px; padding: 0.8rem 0.9rem;
+              display: flex; flex-direction: column; gap: 0.45rem; min-height: 100%; }
+.recap-pill > div { font-size: 0.92rem; line-height: 1.35; }
+.recap-tag { display: inline-flex; align-items: center; justify-content: center;
+             width: 2rem; height: 2rem; border-radius: 8px; font-family: 'JetBrains Mono', monospace;
+             font-weight: 800; font-size: 0.85rem; }
+.recap-tag.blue   { background: rgba(10,132,255,0.18); color: var(--blue); }
+.recap-tag.purple { background: rgba(191,90,242,0.18); color: var(--purple); }
+.recap-tag.teal   { background: rgba(100,210,255,0.18); color: var(--teal); }
+.recap-tag.orange { background: rgba(255,159,10,0.18); color: var(--orange); }
+.recap-tag.green  { background: rgba(48,209,88,0.18); color: var(--green); }
+.final-message { flex: 1; display: flex; align-items: center; justify-content: center;
+                 background: linear-gradient(135deg, rgba(10,132,255,0.08), rgba(191,90,242,0.08));
+                 border-radius: 16px; padding: 2rem; border: 1px solid var(--line); }
+.final-quote { text-align: center; font-size: 1.45rem; line-height: 1.55; max-width: 50rem; }
+.final-quote em { color: var(--blue); font-style: normal; font-weight: 700; }
+.final-quote strong { display: inline-block; margin-top: 0.3rem; font-size: 1.7rem;
+                      background: linear-gradient(90deg, var(--blue), var(--purple));
+                      -webkit-background-clip: text; background-clip: text; color: transparent; }
+.big-quote { font-size: 2.5rem; line-height: 0; color: var(--blue); margin-right: 0.3rem;
+             vertical-align: -0.4rem; }
+
+/* Q&A + resources (slide 20) */
+.qa-slide { padding-top: 3rem; }
+.qa-layout { display: grid; grid-template-columns: 1.05fr 1.4fr; gap: 2rem;
+             align-items: stretch; }
+.qa-left { display: flex; flex-direction: column; justify-content: center; gap: 0.8rem; }
+.qa-headline { font-size: 5rem; font-weight: 800; line-height: 1; letter-spacing: -0.035em;
+               background: linear-gradient(135deg, var(--blue), var(--purple));
+               -webkit-background-clip: text; background-clip: text; color: transparent; }
+.qa-meta { display: flex; flex-direction: column; gap: 0.3rem; margin-top: 1rem;
+           font-size: 0.95rem; padding-top: 1rem; border-top: 1px solid var(--line); }
+.qa-right .kicker { color: var(--blue); font-weight: 600; font-size: 0.95rem;
+                    letter-spacing: 0.04em; margin-bottom: 0.7rem; }
+.res-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem; }
+.res-grid-3 { grid-template-columns: 1fr 1fr 1fr; gap: 0.5rem; }
+.res-card { background: var(--bg-card); border-radius: 12px; padding: 0.8rem 0.95rem;
+            display: flex; flex-direction: column; gap: 0.25rem;
+            border: 1px solid var(--line); min-height: 100%; }
+.res-source { font-size: 0.65rem; letter-spacing: 0.12em; text-transform: uppercase;
+              font-weight: 700; }
+.res-card h3 { font-size: 0.92rem; line-height: 1.25; }
+.res-card p { font-size: 0.78rem; line-height: 1.4; }
+a.res-url { font-family: 'JetBrains Mono', monospace; font-size: 0.7rem;
+            color: var(--blue); padding-top: 0.35rem; border-top: 1px dashed var(--line);
+            margin-top: auto; word-break: break-all; text-decoration: none;
+            transition: color 0.15s; display: block; }
+a.res-url:hover { color: var(--text); border-top-color: var(--blue); }
+
+/* Why fail (slide 2) */
+.card.vague { border: 1px solid rgba(255,69,58,0.30); display: flex; flex-direction: column; gap: 0.7rem; }
+.card.spec-driven { border: 1px solid rgba(48,209,88,0.30); display: flex; flex-direction: column; gap: 0.7rem; }
+.vague-tag { display: inline-block; align-self: flex-start; padding: 0.2rem 0.7rem;
+             border-radius: 999px; font-size: 0.78rem; font-weight: 700;
+             letter-spacing: 0.04em; text-transform: uppercase; }
+.vague-tag.red   { background: rgba(255,69,58,0.18); color: var(--red); }
+.vague-tag.green { background: rgba(48,209,88,0.18); color: var(--green); }
+.cascade { display: flex; flex-direction: column; gap: 0.3rem; padding-top: 0.4rem;
+           border-top: 1px solid var(--line); }
+.cascade-step { font-size: 0.98rem; }
+.cascade-step .ar { font-weight: 800; margin-right: 0.5rem; display: inline-block;
+                    width: 1rem; }
+.cascade-step .ar.red   { color: var(--red); }
+.cascade-step .ar.green { color: var(--green); }
+.callout.analogy strong { color: var(--orange); }
+
+/* Industry data stats (slide 3) */
+.stat-grid { display: grid; grid-template-columns: 1fr 1fr 1fr;
+             gap: 0.8rem; align-content: stretch; }
+.stat-card { background: var(--bg-card); border-radius: 14px; padding: 1.4rem 1.5rem;
+             display: flex; flex-direction: column; gap: 0.3rem; justify-content: center;
+             border-top: 3px solid var(--line); }
+.stat-card:nth-child(1) { border-top-color: var(--green); }
+.stat-card:nth-child(2) { border-top-color: var(--blue); }
+.stat-card:nth-child(3) { border-top-color: var(--orange); }
+.stat-num { font-size: 3.2rem; font-weight: 800; line-height: 1; letter-spacing: -0.04em;
+            font-variant-numeric: tabular-nums; }
+.stat-num.green  { color: var(--green); }
+.stat-num.blue   { color: var(--blue); }
+.stat-num.purple { color: var(--purple); }
+.stat-num.orange { color: var(--orange); }
+.stat-unit { font-size: 1.2rem; font-weight: 700; opacity: 0.75; margin-left: 0.15rem;
+             letter-spacing: 0; }
+.stat-label { font-size: 1.1rem; font-weight: 600; color: var(--text);
+              margin-top: 0.15rem; }
+.stat-source { margin-top: 0.35rem; line-height: 1.4; }
+.stat-source code { background: rgba(255,255,255,0.07); padding: 0 0.35rem;
+                    border-radius: 4px; font-family: 'JetBrains Mono', monospace; font-size: 0.85em; }
+
+/* Progress + nav HUD */
+.hud { position: fixed; left: 0; right: 0; bottom: 0; height: 2px;
+       background: linear-gradient(to right, var(--blue) var(--progress, 0%),
+                                    rgba(255,255,255,0.05) var(--progress, 0%));
+       transition: background 0.2s; pointer-events: none; }
+
+/* Notes overlay */
+.notes-pane {
+  position: fixed; inset: auto 0 0 0; height: 0; overflow: auto;
+  background: rgba(8,8,10,0.96); backdrop-filter: blur(14px);
+  border-top: 1px solid var(--line); transition: height 0.25s ease;
+  padding: 0 4.5rem;
+}
+.notes-pane.open { height: 45vh; padding: 1.6rem 4.5rem; }
+.notes-pane h4 { font-size: 0.85rem; letter-spacing: 0.16em; text-transform: uppercase;
+                 color: var(--blue); margin-bottom: 0.6rem; }
+.notes-pane .note { display: none; max-width: 60rem; }
+.notes-pane .note.active { display: block; }
+.notes-pane p { font-size: 0.95rem; color: var(--light); margin-bottom: 0.7rem; line-height: 1.55; }
+
+/* Help hint */
+.hint { position: fixed; right: 1rem; bottom: 0.75rem; color: var(--dim);
+        font-size: 0.7rem; letter-spacing: 0.04em; }
+.hint kbd { background: #1a1a1f; border: 1px solid var(--line); border-radius: 4px;
+            padding: 0.05rem 0.35rem; font-family: inherit; font-size: 0.7rem; }
+</style>
+</head>
+<body>
+  <main class="deck">
+
+<section class="slide cover" data-idx="1">
+  <div class="cover-grid">
+    <div class="cover-meta">
+      <span class="dot dot-blue"></span>
+      <span class="label">Context engineering 101</span>
+    </div>
+    <h1 class="cover-title">
+      Spec-driven development<br>
+      <span class="dim">con coding agents</span>
+    </h1>
+    <div class="cover-quote">
+      <span class="quote-mark">“</span>
+      La calidad del código del agent es directamente
+      proporcional a la calidad de tu especificación.
+    </div>
+    <div class="cover-foot">
+      <div><span class="light">Speaker</span> · Martin Ramos Mejia</div>
+    </div>
+  </div>
+  <footer class="cover-footer">
+    <span class="page">01 / 21</span>
+  </footer>
+</section>
+
+
+<section class="slide " data-idx="2">  <header class="hdr">    <span class="eyebrow">Apertura</span>    <span class="page">02 / 21</span>  </header>
+  <div class="title-block"><div class="kicker">El problema más común</div><h1>¿Por qué fallan los coding agents?</h1></div>
+  <div class="cols-2 grow">
+    <div class="card vague">
+      <div class="vague-tag red">Prompt vago</div>
+      <pre class="prompt big">“Claude, hazme una app
+ para trackear gastos.”</pre>
+      <div class="cascade">
+        <p class="cascade-step"><span class="ar red">→</span> El agent adivina qué quieres</p>
+        <p class="cascade-step"><span class="ar red">→</span> Hace suposiciones incorrectas</p>
+        <p class="cascade-step"><span class="ar red">→</span> Código que no es lo que necesitabas</p>
+      </div>
+    </div>
+    <div class="card spec-driven">
+      <div class="vague-tag green">Spec-driven</div>
+      <pre class="prompt big">“Necesito que los usuarios
+ registren gastos en &lt; 10 s,
+ con categoría auto y resumen
+ mensual. Sin pagos. Test:
+ funciona en mobile.”</pre>
+      <div class="cascade">
+        <p class="cascade-step"><span class="ar green">✓</span> Outcomes claros</p>
+        <p class="cascade-step"><span class="ar green">✓</span> Boundaries explícitas</p>
+        <p class="cascade-step"><span class="ar green">✓</span> Verification criteria</p>
+      </div>
+    </div>
+  </div>
+  <div class="callout mt-3 analogy">
+    <span class="bar bg-orange"></span>
+    <div>
+      <strong>Analogía · receta de cocina</strong>
+      <span class="light"> · "hazme algo rico" vs "spaghetti carbonara: pasta al dente, huevos, pancetta, pecorino, sin crema". El chef ya sabe exactamente qué hacer.</span>
+    </div>
+  </div>
+</section>
+
+
+<section class="slide " data-idx="3">  <header class="hdr">    <span class="eyebrow">Apertura</span>    <span class="page">03 / 21</span>  </header>
+  <div class="title-block"><div class="kicker">Data de la industria · 2026</div><h1>¿Funciona spec-driven development?</h1></div>
+  <div class="stat-grid grow">
+    <div class="stat-card">
+      <div class="stat-num green">67%</div>
+      <div class="stat-label">menos rollbacks</div>
+      <p class="stat-source dim small">Teams con specs escritos vs sin specs (industry data 2026)</p>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num blue">3–5×</div>
+      <div class="stat-label">más productividad</div>
+      <p class="stat-source dim small">Teams con workflows spec-driven vs AI como autocomplete</p>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num orange">+13.7<span class="stat-unit">pts</span></div>
+      <div class="stat-label">mismo modelo, mejor harness</div>
+      <p class="stat-source dim small">LangChain benchmark · 52.8% → 66.5% solo cambiando el contexto</p>
+    </div>
+  </div>
+  <div class="callout mt-3 quote-cl">
+    <span class="bar bg-blue"></span>
+    <blockquote class="pullq">
+      “The harness design represents the actual competitive advantage, not raw model capability.”
+      <cite>— siguiendo a <a href="https://alphasignalai.substack.com/p/a-closer-look-at-harness-engineering" target="_blank" rel="noopener">AlphaSignal · A closer look at Harness Engineering</a> (paráfrasis del análisis sobre OpenAI Codex)</cite>
+    </blockquote>
+  </div>
+</section>
+
+
+<section class="slide " data-idx="4">  <header class="hdr">    <span class="eyebrow">El proceso</span>    <span class="page">04 / 21</span>  </header>
+  <div class="title-block"><div class="kicker">El proceso, de punta a punta</div><h1>El proceso, en 3 fases</h1></div>
+  <div class="cols-3 grow">
+    <div class="card">
+      <div class="stripe bg-blue"></div>
+      <div class="big-num">1</div>
+      <h3>De scope a spec</h3>
+      <p class="dim">Análisis → ideación → especificación.</p>
+      <p class="small">Pasamos de una idea vaga a un documento que el agent pueda ejecutar.</p>
+    </div>
+    <div class="card">
+      <div class="stripe bg-purple"></div>
+      <div class="big-num">2</div>
+      <h3>Crítica y refinamiento</h3>
+      <p class="dim">Reflection loop, multi-round.</p>
+      <p class="small">El agent ataca la spec hasta que no encuentra más huecos.</p>
+    </div>
+    <div class="card">
+      <div class="stripe bg-green"></div>
+      <div class="big-num">3</div>
+      <h3>Planning → implementation</h3>
+      <p class="dim">Plan revisado → código.</p>
+      <p class="small">Si las fases 1 y 2 están bien, ésta se simplifica.</p>
+    </div>
+  </div>
+  <div class="callout mt-3">
+    <span class="bar bg-blue"></span>
+    <div>
+      <strong>Hoy nos enfocamos en fases 1 y 2.</strong>
+      <span class="light"> Es donde se gana o se pierde el proyecto.</span>
+    </div>
+  </div>
+</section>
+
+
+<section class="slide " data-idx="5">  <header class="hdr">    <span class="eyebrow">Fase 1 · De scope a spec</span>    <span class="page">05 / 21</span>  </header>
+  <div class="title-block"><div class="kicker">Paso 1 · Análisis</div><h1>Análisis: las 3 preguntas</h1></div>
+  <p class="lede">Antes de comenzar a implementar con el coding agent, asegúrate de poder responder estas 3 preguntas.</p>
+  <div class="q-list grow">
+    <div class="q-row">
+      <span class="q-num blue">01</span>
+      <div class="q-body">
+        <h3>¿Qué quiero lograr?</h3>
+        <p class="dim">Outcomes concretos, resultados esperados, métricas verificables.</p>
+      </div>
+    </div>
+    <div class="q-row">
+      <span class="q-num purple">02</span>
+      <div class="q-body">
+        <h3>¿Qué <em>no</em> quiero?</h3>
+        <p class="dim">Límites, out of scope, constraints. Tan importante como el "qué sí".</p>
+      </div>
+    </div>
+    <div class="q-row">
+      <span class="q-num green">03</span>
+      <div class="q-body">
+        <h3>¿Cómo sé que está "done"?</h3>
+        <p class="dim">Criterios de verificación, tests, success criteria medibles.</p>
+      </div>
+    </div>
+  </div>
+  <div class="callout mt-3">
+    <span class="bar bg-blue"></span>
+    <div>
+      <strong>Regla de oro</strong>
+      <span class="light"> · si no puedes responder las tres con claridad, no estás listo para el agent. Piensa primero, ejecuta después.</span>
+    </div>
+  </div>
+</section>
+
+
+<section class="slide " data-idx="6">  <header class="hdr">    <span class="eyebrow">Fase 1 · De scope a spec</span>    <span class="page">06 / 21</span>  </header>
+  <div class="title-block"><div class="kicker">Paso 2 · Ideación</div><h1>Ideación: el agent como thinking partner</h1></div>
+  <div class="cols-2 grow">
+    <div class="left-col">
+      <p class="lede">No te apures a una solución. Usa al agent <strong>antes</strong> de decidir qué construir.</p>
+      <ul class="checklist">
+        <li><span class="check green">✓</span> Pide 3 approaches con pros/cons</li>
+        <li><span class="check green">✓</span> Cuestiona trade-offs explícitamente</li>
+        <li><span class="check green">✓</span> Prueba role prompting: arquitecto, UX, performance</li>
+      </ul>
+      <p class="small dim mt-2">Cada rol resalta cosas distintas. Ese es el punto.</p>
+    </div>
+    <div class="right-col">
+      <div class="prompt-card">
+        <div class="prompt-head">
+          <span class="dot dot-red"></span>
+          <span class="dot" style="background:#ffbd2e;"></span>
+          <span class="dot" style="background:#28c840;"></span>
+          <span class="prompt-title">prompt · ideación</span>
+        </div>
+        <pre class="prompt big">Quiero <em>trackear gastos personales</em>.
+
+Explorá 3 approaches diferentes:
+  1. App web simple
+  2. Bot de Telegram
+  3. Google Sheets + Apps Script
+
+Para cada uno, dame <em>pros</em>, <em>cons</em>,
+y estimación de complejidad.</pre>
+      </div>
+    </div>
+  </div>
+  <div class="callout mt-3">
+    <span class="bar bg-purple"></span>
+    <div>
+      <strong>Tip</strong>
+      <span class="light"> · "Actuá como un arquitecto de software con 10 años de experiencia. ¿Qué approach recomendás y por qué?"</span>
+    </div>
+  </div>
+</section>
+
+
+<section class="slide " data-idx="7">  <header class="hdr">    <span class="eyebrow">Fase 1 · De scope a spec</span>    <span class="page">07 / 21</span>  </header>
+  <div class="title-block"><div class="kicker">Paso 3 · Especificación</div><h1>Especificación: los 7 elementos</h1></div>
+  <p class="lede">Análisis de GitHub sobre 2.500+ proyectos: las specs exitosas tienen siete elementos.</p>
+  <div class="elem-grid grow">
+
+        <div class="elem-row">
+          <span class="elem-num">01</span>
+          <div class="elem-body">
+            <h3>Outcomes </h3>
+            <p class="dim small">Qué debe lograr el sistema.</p>
+          </div>
+        </div>
+        <div class="elem-row">
+          <span class="elem-num">02</span>
+          <div class="elem-body">
+            <h3>Scope boundaries </h3>
+            <p class="dim small">Qué está in/out de scope.</p>
+          </div>
+        </div>
+        <div class="elem-row">
+          <span class="elem-num">03</span>
+          <div class="elem-body">
+            <h3>Constraints </h3>
+            <p class="dim small">Tech stack, performance, deadlines.</p>
+          </div>
+        </div>
+        <div class="elem-row">
+          <span class="elem-num">04</span>
+          <div class="elem-body">
+            <h3>Prior decisions </h3>
+            <p class="dim small">Decisiones tomadas — y por qué.</p>
+          </div>
+        </div>
+        <div class="elem-row">
+          <span class="elem-num">05</span>
+          <div class="elem-body">
+            <h3>Task breakdown </h3>
+            <p class="dim small">Fases, milestones, dependencies.</p>
+          </div>
+        </div>
+        <div class="elem-row">
+          <span class="elem-num">06</span>
+          <div class="elem-body">
+            <h3>Edge cases </h3>
+            <p class="dim small">Casos extremos a considerar.</p>
+          </div>
+        </div>
+        <div class="elem-row is-key">
+          <span class="elem-num">07</span>
+          <div class="elem-body">
+            <h3>Verification criteria <span class="key-tag">★ el más importante</span></h3>
+            <p class="dim small">Tabla: requirement → test → success.</p>
+          </div>
+        </div>
+  </div>
+  <div class="meta-row mt-3">
+    <span class="meta-pill"><strong>Formato</strong> · Markdown</span>
+    <span class="meta-pill"><strong>Versionado</strong> · Git, un commit por decisión</span>
+    <span class="meta-pill"><strong>Few-shot</strong> · ejemplos concretos en la spec</span>
+  </div>
+</section>
+
+
+<section class="slide " data-idx="8">  <header class="hdr">    <span class="eyebrow">Fase 2 · Crítica y refinamiento</span>    <span class="page">08 / 21</span>  </header>
+  <div class="title-block"><div class="kicker">Fase 2 · El loop de reflection</div><h1>Crítica multi-round</h1></div>
+  <p class="lede">Acá usás al agent para mejorar tu propio pensamiento, antes de pedirle código.</p>
+  <div class="loop grow">
+    <div class="loop-start">
+      <span class="loop-pill blue">Spec inicial</span>
+    </div>
+    <div class="loop-rounds">
+      <div class="round-card">
+        <div class="round-tag blue">Round 1</div>
+        <h3>Gaps</h3>
+        <pre class="prompt">“¿Qué estoy omitiendo? ¿Qué requirements faltan?”</pre>
+        <p class="small dim">Validación de inputs, categorías, formatos…</p>
+      </div>
+      <div class="round-arrow">→ actualizar spec →</div>
+      <div class="round-card">
+        <div class="round-tag purple">Round 2</div>
+        <h3>Edge cases</h3>
+        <pre class="prompt">“¿Qué podría salir mal? ¿Qué edge cases no estoy considerando?”</pre>
+        <p class="small dim">Timezones, cargas masivas, undo, datos corruptos…</p>
+      </div>
+      <div class="round-arrow">→ actualizar spec →</div>
+      <div class="round-card">
+        <div class="round-tag teal">Round 3</div>
+        <h3>Blind spots</h3>
+        <pre class="prompt">“¿Qué no estoy considerando? ¿Qué suposiciones podrían ser incorrectas?”</pre>
+        <p class="small dim">Asunciones de moneda, conectividad, escala…</p>
+      </div>
+    </div>
+  </div>
+  <div class="callout mt-3">
+    <span class="bar bg-green"></span>
+    <div>
+      <strong>Terminás cuando estás confiado</strong>
+      <span class="light"> · no hay número fijo de rounds. Parás cuando la spec se siente sólida.</span>
+    </div>
+  </div>
+</section>
+
+
+<section class="slide " data-idx="9">  <header class="hdr">    <span class="eyebrow">Técnica</span>    <span class="page">09 / 21</span>  </header>
+  <div class="title-block"><div class="kicker">Técnica avanzada de crítica</div><h1>Role-based critique</h1></div>
+  <p class="lede">Diferentes roles = diferentes perspectivas. Un mismo agent encuentra issues distintos según el sombrero que le pongas.</p>
+  <div class="cols-3 grow">
+    <div class="card">
+      <div class="role-tag blue">Security engineer</div>
+      <pre class="prompt">“Revisa esta spec como un <em>security engineer</em>. ¿Qué vulnerabilidades ves?”</pre>
+      <p class="small dim">Inputs sin validar, falta de rate limiting, credenciales hardcoded.</p>
+    </div>
+    <div class="card">
+      <div class="role-tag purple">UX designer</div>
+      <pre class="prompt">“Revisa esta spec como un <em>UX designer</em>. ¿El flujo es intuitivo? ¿Qué frustraciones tendrá el usuario?”</pre>
+      <p class="small dim">5 clicks para tareas simples, sin feedback visual, controls escondidos.</p>
+    </div>
+    <div class="card">
+      <div class="role-tag orange">Performance engineer</div>
+      <pre class="prompt">“Revisa esta spec como un <em>performance engineer</em>. ¿Qué podría escalar mal?”</pre>
+      <p class="small dim">Carga full sin paginación, N+1 queries, sin caching.</p>
+    </div>
+  </div>
+  <div class="callout mt-3">
+    <span class="bar bg-teal"></span>
+    <div>
+      <strong>Tip de model settings</strong>
+      <span class="light"> · temperature alta (0.8–1.0) para crítica creativa, baja (0.2–0.4) para implementación.</span>
+    </div>
+  </div>
+</section>
+
+
+<section class="slide " data-idx="10">  <header class="hdr">    <span class="eyebrow">Técnica</span>    <span class="page">10 / 21</span>  </header>
+  <div class="title-block"><div class="kicker">Técnica · pensar en voz alta</div><h1>Chain of thought</h1></div>
+  <p class="lede">Haz que el agent razone explícitamente antes de responder. Reasoning paso a paso = respuestas más profundas.</p>
+  <div class="cols-2 grow">
+    <div class="card compare bad">
+      <div class="compare-head"><span class="compare-icon red">✗</span> Prompt débil</div>
+      <pre class="prompt">“¿Esta spec está completa?”</pre>
+      <p class="small dim">El agent contesta superficial: “Sí” / “Falta X”. No explora.</p>
+    </div>
+    <div class="card compare good">
+      <div class="compare-head"><span class="compare-icon green">✓</span> Prompt fuerte</div>
+      <pre class="prompt">“Antes de responder, piensa paso a paso:
+  1. ¿Qué componentes necesita el sistema?
+  2. ¿Cada componente está especificado?
+  3. ¿Las interacciones están claras?
+  4. ¿Los edge cases están cubiertos?
+
+Ahora sí, responde si está completa.”</pre>
+      <p class="small dim">Razonamiento explícito antes de la conclusión.</p>
+    </div>
+  </div>
+  <div class="callout mt-3">
+    <span class="bar bg-teal"></span>
+    <div>
+      <strong>Por qué funciona</strong>
+      <span class="light"> · los LLMs son mejores cuando razonan antes de responder. Si no se lo pedís, eligen la ruta más corta.</span>
+    </div>
+  </div>
+</section>
+
+
+<section class="slide " data-idx="11">  <header class="hdr">    <span class="eyebrow">Técnica</span>    <span class="page">11 / 21</span>  </header>
+  <div class="title-block"><div class="kicker">Técnica · reglas explícitas</div><h1>Three-tier boundaries</h1></div>
+  <p class="lede">Tres categorías de reglas que el agent respeta sin tener que adivinar.</p>
+  <div class="cols-3 grow">
+    <div class="card tier tier-always">
+      <div class="tier-head"><span class="tier-icon green">✓</span> Always</div>
+      <p class="tier-sub dim">Autonomía total. Cosas seguras que debe hacer siempre.</p>
+      <pre class="prompt mini">Use Alembic para schema changes.
+Trigger: database, schema, table, column.</pre>
+      <p class="small dim">Reduce fricción en lo predecible.</p>
+    </div>
+    <div class="card tier tier-ask">
+      <div class="tier-head"><span class="tier-icon orange">⚠</span> Ask first</div>
+      <p class="tier-sub dim">Alto impacto. Pide confirmación antes de actuar.</p>
+      <pre class="prompt mini">Dropping columns (data loss).
+Trigger: DROP, delete column, remove field.</pre>
+      <p class="small dim">Previene cambios grandes sin que lo sepas.</p>
+    </div>
+    <div class="card tier tier-never">
+      <div class="tier-head"><span class="tier-icon red">✕</span> Never</div>
+      <p class="tier-sub dim">Hard stop. Prohibido absolutamente.</p>
+      <pre class="prompt mini">Raw SQL en application code.
+Trigger: cursor.execute, raw query, SQL string.</pre>
+      <p class="small dim">Safety crítico, sin excepciones.</p>
+    </div>
+  </div>
+  <div class="callout mt-3">
+    <span class="bar bg-blue"></span>
+    <div>
+      <strong>Tip avanzado · trigger prompts</strong>
+      <span class="light"> · enumerá las palabras clave que disparan cada regla. El agent las detecta proactivamente, no espera a meter la pata.</span>
+    </div>
+  </div>
+</section>
+
+
+<section class="slide " data-idx="12">  <header class="hdr">    <span class="eyebrow">Model settings</span>    <span class="page">12 / 21</span>  </header>
+  <div class="title-block"><div class="kicker">Lo que cambia entre fase y fase</div><h1>Model settings que importan</h1></div>
+  <p class="lede">Temperature es el setting más importante. Controla qué tan creativo vs determinista es el agent.</p>
+  <div class="temp-scale">
+    <span class="temp-label">0.0</span>
+    <div class="temp-bar">
+      <div class="temp-zone temp-low">
+        <span class="temp-zone-label">Implementation</span>
+        <span class="temp-zone-range">0.2 – 0.4</span>
+      </div>
+      <div class="temp-zone temp-high">
+        <span class="temp-zone-label">Ideación &amp; Critique</span>
+        <span class="temp-zone-range">0.8 – 1.0</span>
+      </div>
+    </div>
+    <span class="temp-label">1.0</span>
+  </div>
+  <div class="cols-2 grow mt-2">
+    <div class="card phase-card phase-critique">
+      <div class="phase-tag purple">Ideación &amp; critique</div>
+      <h3>Temperature alta</h3>
+      <p class="dim">Querés exploración, edge cases, perspectivas distintas. Mismo prompt × 3 = 3 respuestas distintas.</p>
+      <ul class="setting-list">
+        <li><strong>Top-p</strong> 0.9 – 0.95</li>
+        <li><strong>Presence penalty</strong> 0.1 – 0.3</li>
+        <li><strong>Max tokens</strong> 4000 – 8000</li>
+      </ul>
+    </div>
+    <div class="card phase-card phase-impl">
+      <div class="phase-tag blue">Implementation</div>
+      <h3>Temperature baja</h3>
+      <p class="dim">Querés determinismo, código consistente. Que siga la spec al pie de la letra, sin improvisar.</p>
+      <ul class="setting-list">
+        <li><strong>Top-p</strong> 0.9</li>
+        <li><strong>Presence penalty</strong> 0</li>
+        <li><strong>Max tokens</strong> según task</li>
+      </ul>
+    </div>
+  </div>
+  <div class="callout mt-3 news">
+    <span class="bar bg-orange"></span>
+    <div>
+      <strong>Opus 4.7 · abril 2026</strong>
+      <span class="light"> · más conservador por default. Para critique agrega: <em>“if you can think of an ambitious analysis… prefer that over listing small individual gaps.”</em> Sin esto, da análisis muy atómicos.</span>
+    </div>
+  </div>
+</section>
+
+
+<section class="slide " data-idx="13">  <header class="hdr">    <span class="eyebrow">Spec → planning</span>    <span class="page">13 / 21</span>  </header>
+  <div class="title-block"><div class="kicker">El puente antes del código</div><h1>De spec a planning</h1></div>
+  <p class="lede">Antes de pedirle código, solicita un plan — y revísalo.</p>
+  <div class="flow grow">
+    <div class="flow-step">
+      <div class="flow-icon blue">📋</div>
+      <div class="flow-label">Spec refinada</div>
+      <div class="flow-sub dim">Aprobada después<br>de critique</div>
+    </div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-step flow-cmd">
+      <pre class="prompt cmd">$ /plan</pre>
+      <div class="flow-label">Solicitar un plan</div>
+      <div class="flow-sub dim">ej. <code>/plan</code><br>en Claude Code</div>
+    </div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-step flow-output">
+      <div class="flow-label">El agent genera</div>
+      <ul class="output-list">
+        <li><span class="b green">·</span> Breakdown de tasks</li>
+        <li><span class="b green">·</span> Orden de implementación</li>
+        <li><span class="b green">·</span> Files a modificar / crear</li>
+        <li><span class="b green">·</span> Risks &amp; dependencies</li>
+      </ul>
+    </div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-step flow-gate">
+      <div class="flow-icon orange">✓</div>
+      <div class="flow-label">Revisión</div>
+      <div class="flow-sub dim">Aprobar antes<br>del código</div>
+    </div>
+  </div>
+  <div class="callout mt-3 emphasis">
+    <span class="bar bg-green"></span>
+    <div>
+      <strong>Catching errores en plan = 10–100× más barato</strong>
+      <span class="light"> · cambiar un plan toma 30 segundos. Cambiar código, horas de refactor.</span>
+    </div>
+  </div>
+</section>
+
+
+<section class="slide " data-idx="14">  <header class="hdr">    <span class="eyebrow">Ejemplo end-to-end</span>    <span class="page">14 / 21</span>  </header>
+  <div class="title-block"><div class="kicker">De la idea a la app, en horas</div><h1>Ejemplo: expense tracker</h1></div>
+  <div class="timeline grow">
+    <div class="tl-row">
+      <div class="tl-marker"><span class="tl-num blue">1</span></div>
+      <div class="tl-body">
+        <h3>Scope → Spec</h3>
+        <p class="dim small">Análisis: tracker personal, categorías auto, resumen mensual. Ideación: web app vs bot vs Sheets → elegimos PWA. Spec con 7 elementos en <code>spec.md</code>.</p>
+      </div>
+    </div>
+    <div class="tl-row">
+      <div class="tl-marker"><span class="tl-num purple">2</span></div>
+      <div class="tl-body">
+        <h3>Critique · 3 rounds</h3>
+        <p class="dim small"><strong>R1</strong> validación de inputs, monedas. <strong>R2</strong> timezones, múltiples gastos mismo día. <strong>R3</strong> performance con 10K+ entries, offline support.</p>
+      </div>
+    </div>
+    <div class="tl-row">
+      <div class="tl-marker"><span class="tl-num teal">3</span></div>
+      <div class="tl-body">
+        <h3>Planning</h3>
+        <p class="dim small"><code>/plan</code> → propuesta: DB schema → API endpoints → UI. Revisamos, aprobamos.</p>
+      </div>
+    </div>
+    <div class="tl-row">
+      <div class="tl-marker"><span class="tl-num green">4</span></div>
+      <div class="tl-body">
+        <h3>Implementation</h3>
+        <p class="dim small">Agent ejecuta paso a paso. Checkpoints después de cada milestone: tests pass, spec compliance verificada.</p>
+      </div>
+    </div>
+  </div>
+  <div class="callout mt-3 contrast">
+    <div class="contrast-cell good">
+      <div class="contrast-time">~2–3 horas</div>
+      <div class="contrast-label">con spec-driven</div>
+    </div>
+    <div class="contrast-vs">vs</div>
+    <div class="contrast-cell bad">
+      <div class="contrast-time">~2 días</div>
+      <div class="contrast-label">de trial &amp; error</div>
+    </div>
+  </div>
+</section>
+
+
+<section class="slide " data-idx="15">  <header class="hdr">    <span class="eyebrow">Context building</span>    <span class="page">15 / 21</span>  </header>
+  <div class="title-block"><div class="kicker">Más allá de la spec</div><h1>Context building</h1></div>
+  <p class="lede">Para proyectos largos no alcanza con una spec por feature. Necesitás documentos que mantengan alignment a través de sesiones.</p>
+  <div class="cols-3 grow">
+    <div class="doc-card">
+      <div class="doc-head"><span class="doc-icon blue">📜</span><span class="doc-name">project_constitution.md</span></div>
+      <h3>Project constitution</h3>
+      <ul class="doc-bullets">
+        <li>Mission &amp; valores</li>
+        <li>Tech philosophy (ej: <em>simplicidad sobre features</em>)</li>
+        <li>Decisiones arquitecturales fundamentales</li>
+        <li>Roadmap 6–12 meses</li>
+      </ul>
+    </div>
+    <div class="doc-card">
+      <div class="doc-head"><span class="doc-icon purple">🎯</span><span class="doc-name">strategy/expense.md</span></div>
+      <h3>Strategy docs</h3>
+      <ul class="doc-bullets">
+        <li>Por qué construir <em>esta</em> feature ahora</li>
+        <li>Qué problema del usuario resuelve</li>
+        <li>Cómo se conecta con el resto del sistema</li>
+        <li>Contexto de negocio</li>
+      </ul>
+    </div>
+    <div class="doc-card">
+      <div class="doc-head"><span class="doc-icon green">📐</span><span class="doc-name">guides/react.md</span></div>
+      <h3>Style guides &amp; patterns</h3>
+      <ul class="doc-bullets">
+        <li>Convenciones de naming</li>
+        <li>Patterns establecidos (auth, errors)</li>
+        <li>Ejemplos concretos del repo (few-shot)</li>
+        <li>Cómo hacemos las cosas aquí</li>
+      </ul>
+    </div>
+  </div>
+  <div class="callout mt-3">
+    <span class="bar bg-teal"></span>
+    <div>
+      <strong>Reduce context drift</strong>
+      <span class="light"> · sin estos docs, cada sesión empieza de cero. Con ellos, hay continuidad y el agent produce código alineado con la cultura del proyecto.</span>
+    </div>
+  </div>
+</section>
+
+
+<section class="slide " data-idx="16">  <header class="hdr">    <span class="eyebrow">Harness engineering</span>    <span class="page">16 / 21</span>  </header>
+  <div class="title-block"><div class="kicker">Lo que aprendés se convierte en guía</div><h1>Harness engineering: el learning loop</h1></div>
+  <div class="cols-2 grow">
+    <div class="left-col">
+      <p class="lede">El agent lee <code>AGENTS.md</code> / <code>CLAUDE.md</code> en cada sesión. Lo que documentes ahí compone el "harness" que mantiene al agent on-track.</p>
+      <ul class="harness-list">
+        <li><span class="b blue">·</span> <strong>Decisiones</strong> tomadas — y por qué</li>
+        <li><span class="b green">·</span> <strong>Patterns</strong> que funcionaron</li>
+        <li><span class="b red">·</span> <strong>Anti-patterns</strong> que no funcionaron</li>
+        <li><span class="b orange">·</span> <strong>Edge cases</strong> descubiertos</li>
+        <li><span class="b purple">·</span> <strong>Constraints</strong> específicos del proyecto</li>
+      </ul>
+      <p class="small dim mt-2">El agent no repite mistakes y sigue patterns que ya sabés que funcionan.</p>
+    </div>
+    <div class="right-col">
+      <div class="prompt-card">
+        <div class="prompt-head">
+          <span class="dot dot-red"></span>
+          <span class="dot" style="background:#ffbd2e;"></span>
+          <span class="dot" style="background:#28c840;"></span>
+          <span class="prompt-title">AGENTS.md</span>
+        </div>
+        <pre class="prompt big md"><span class="md-h">## Authentication</span>
+- JWT expiry: <span class="md-em">1 hour</span> (security req)
+- Refresh token: 7 days
+- Always use httpOnly cookies for tokens
+- <span class="md-warn">Never</span> store tokens in localStorage (XSS risk)
+
+<span class="md-h">## Tech stack decision</span>
+- Chose Firebase over custom backend
+- Rationale: speed to market + mobile
+- Implication: Zustand for state (simpler)</pre>
+      </div>
+    </div>
+  </div>
+  <div class="callout mt-3 quote-cl">
+    <span class="bar bg-blue"></span>
+    <blockquote class="pullq">
+      "El agent no necesita más instrucciones. Necesita un mundo donde hacer lo correcto es obvio y lo incorrecto es difícil."
+      <cite>— paráfrasis del approach de <a href="https://openai.com/index/harness-engineering/" target="_blank" rel="noopener">OpenAI Harness Engineering</a></cite>
+    </blockquote>
+  </div>
+</section>
+
+
+<section class="slide " data-idx="17">  <header class="hdr">    <span class="eyebrow">Técnica</span>    <span class="page">17 / 21</span>  </header>
+  <div class="title-block"><div class="kicker">Antipattern: dumpear todo junto</div><h1>Feedback 1-a-1 en análisis</h1></div>
+  <p class="lede">En análisis e ideación, ve <strong>pregunta por pregunta</strong>. Cada round agrega contexto incremental — mejor alignment que volcar todo al inicio.</p>
+  <div class="chat grow">
+    <div class="chat-bubble user">
+      <div class="chat-who">Vos</div>
+      <p>“Para una app de expense tracking, ¿qué tech stack recomiendas?”</p>
+    </div>
+    <div class="chat-bubble agent">
+      <div class="chat-who">Agent</div>
+      <p>“Opciones: React + Firebase, Next.js + Supabase, o Vue + custom backend. Depende de tus priorities…”</p>
+    </div>
+    <div class="chat-bubble user">
+      <div class="chat-who">Vos</div>
+      <p>“Priorizo speed to market y no quiero manejar backend. ¿Qué cambia?”</p>
+    </div>
+    <div class="chat-bubble agent">
+      <div class="chat-who">Agent</div>
+      <p>“Entonces React + Firebase o Next.js + Supabase. Firebase tiene mejor ecosystem mobile si piensas expandir…”</p>
+    </div>
+    <div class="chat-bubble user">
+      <div class="chat-who">Vos</div>
+      <p>“Mobile es importante. Vamos con Firebase.”</p>
+    </div>
+    <div class="chat-bubble agent">
+      <div class="chat-who">Agent</div>
+      <p>“Perfecto. Para state recomiendo Zustand sobre Redux porque…”</p>
+    </div>
+  </div>
+  <div class="callout mt-3">
+    <span class="bar bg-purple"></span>
+    <div>
+      <strong>Cada decisión informa la próxima pregunta</strong>
+      <span class="light"> · al final el agent entendió no solo <em>qué</em> quieres sino <em>por qué</em> tomaste cada decisión. Después documentas ese rationale en <code>AGENTS.md</code>.</span>
+    </div>
+  </div>
+</section>
+
+
+<section class="slide " data-idx="18">  <header class="hdr">    <span class="eyebrow">Red flags</span>    <span class="page">18 / 21</span>  </header>
+  <div class="title-block"><div class="kicker">Antes de cerrar — qué evitar</div><h1>Red flags</h1></div>
+  <p class="lede">Seis anti-patterns frecuentes. Evítalos y la experiencia con coding agents mejora drásticamente.</p>
+  <div class="rf-grid grow">
+
+        <div class="rf-card">
+          <span class="rf-x">✕</span>
+          <div class="rf-body">
+            <h3>“Hazme algo genial”</h3>
+            <p class="dim small">Demasiado vague. El agent adivina y rara vez acierta.</p>
+          </div>
+        </div>
+        <div class="rf-card">
+          <span class="rf-x">✕</span>
+          <div class="rf-body">
+            <h3>Specs de 50 páginas en un solo prompt</h3>
+            <p class="dim small">Context overload. El agent se pierde y prioriza mal.</p>
+          </div>
+        </div>
+        <div class="rf-card">
+          <span class="rf-x">✕</span>
+          <div class="rf-body">
+            <h3>Asumir que tests = correctness</h3>
+            <p class="dim small">Los tests pueden ser incompletos. Revisa siempre.</p>
+          </div>
+        </div>
+        <div class="rf-card">
+          <span class="rf-x">✕</span>
+          <div class="rf-body">
+            <h3>Skipear el review del plan</h3>
+            <p class="dim small">Fixing errores en código es 10–100× más caro.</p>
+          </div>
+        </div>
+        <div class="rf-card">
+          <span class="rf-x">✕</span>
+          <div class="rf-body">
+            <h3>Mismo temperature para todo</h3>
+            <p class="dim small">Critique necesita alta. Implementation, baja.</p>
+          </div>
+        </div>
+        <div class="rf-card">
+          <span class="rf-x">✕</span>
+          <div class="rf-body">
+            <h3>No versionar la spec</h3>
+            <p class="dim small">Pierdes track de decisiones y por qué cambiaron.</p>
+          </div>
+        </div>
+  </div>
+</section>
+
+
+<section class="slide " data-idx="19">  <header class="hdr">    <span class="eyebrow">Acciones concretas</span>    <span class="page">19 / 21</span>  </header>
+  <div class="title-block"><div class="kicker">Acciones concretas que funcionan ya</div><h1>Quick wins · empieza hoy</h1></div>
+  <p class="lede">Sin hacer el proceso completo, solo con estos siete vas a ver mejora inmediata. Después, escalás.</p>
+  <div class="qw-grid grow">
+
+        <div class="qw-row">
+          <span class="qw-num">01</span>
+          <div class="qw-body">
+            <h3>Responde las 3 preguntas antes del prompt</h3>
+            <p class="dim small">Qué quiero · qué NO quiero · cómo sé que funciona.</p>
+          </div>
+          <span class="qw-check green">✓</span>
+        </div>
+        <div class="qw-row">
+          <span class="qw-num">02</span>
+          <div class="qw-body">
+            <h3>Haz al menos 1 round de critique</h3>
+            <p class="dim small">“¿Qué estoy omitiendo en esta idea?”</p>
+          </div>
+          <span class="qw-check green">✓</span>
+        </div>
+        <div class="qw-row">
+          <span class="qw-num">03</span>
+          <div class="qw-body">
+            <h3>Verification criteria antes de codear</h3>
+            <p class="dim small">Tabla: requirement → test → success criteria.</p>
+          </div>
+          <span class="qw-check green">✓</span>
+        </div>
+        <div class="qw-row">
+          <span class="qw-num">04</span>
+          <div class="qw-body">
+            <h3>Quality-gate checklist (25+/30)</h3>
+            <p class="dim small">Asegúrate de que la spec esté completa antes de planning.</p>
+          </div>
+          <span class="qw-check green">✓</span>
+        </div>
+        <div class="qw-row">
+          <span class="qw-num">05</span>
+          <div class="qw-body">
+            <h3>Usa <code>/plan</code> antes del código</h3>
+            <p class="dim small">Revisa y aprueba el plan antes de implementación.</p>
+          </div>
+          <span class="qw-check green">✓</span>
+        </div>
+        <div class="qw-row">
+          <span class="qw-num">06</span>
+          <div class="qw-body">
+            <h3>Documenta decisiones en un <code>.md</code></h3>
+            <p class="dim small">Aunque sean bullets simples — lo importante es escribir el por qué.</p>
+          </div>
+          <span class="qw-check green">✓</span>
+        </div>
+        <div class="qw-row">
+          <span class="qw-num">07</span>
+          <div class="qw-body">
+            <h3>Prueba role-based critique</h3>
+            <p class="dim small">“Revisa esto como security engineer / UX designer.”</p>
+          </div>
+          <span class="qw-check green">✓</span>
+        </div>
+  </div>
+  <div class="callout mt-3">
+    <span class="bar bg-green"></span>
+    <div>
+      <strong>Empezá hoy</strong>
+      <span class="light"> · elige 2 o 3 quick wins, aplícalos en tu próximo prompt. La mejora es inmediata.</span>
+    </div>
+  </div>
+</section>
+
+
+<section class="slide " data-idx="20">  <header class="hdr">    <span class="eyebrow">Cierre</span>    <span class="page">20 / 21</span>  </header>
+  <div class="title-block"><div class="kicker">Lo que vimos hoy</div><h1>Recap</h1></div>
+  <div class="recap-grid">
+    <div class="recap-pill"><span class="recap-tag blue">01</span><div><strong>De scope a spec</strong><br><span class="dim small">3 preguntas · ideación · 7 elementos</span></div></div>
+    <div class="recap-pill"><span class="recap-tag purple">02</span><div><strong>Crítica multi-round</strong><br><span class="dim small">Gaps · edge cases · blind spots</span></div></div>
+    <div class="recap-pill"><span class="recap-tag teal">03</span><div><strong>Técnicas</strong><br><span class="dim small">Roles · chain of thought · boundaries</span></div></div>
+    <div class="recap-pill"><span class="recap-tag orange">04</span><div><strong>Model settings</strong><br><span class="dim small">Alta para critique · baja para code</span></div></div>
+    <div class="recap-pill"><span class="recap-tag green">05</span><div><strong>Context building</strong><br><span class="dim small">Constitution · strategy · AGENTS.md</span></div></div>
+  </div>
+  <div class="final-message">
+    <div class="final-quote">
+      <span class="big-quote">“</span>
+      Invierte tiempo en <em>pensar</em> antes de <em>ejecutar</em>.<br>
+      <br>
+      La spec es tu pensamiento hecho explícito.<br>
+      El agent ejecuta tu pensamiento.<br>
+      <br>
+      <strong>Pensamiento claro = código claro.</strong>
+    </div>
+  </div>
+</section>
+
+
+<section class="slide qa-slide" data-idx="21">  <header class="hdr">    <span class="eyebrow">Q&amp;A</span>    <span class="page">21 / 21</span>  </header>
+  <div class="qa-layout grow">
+    <div class="qa-left">
+      <div class="kicker">Cierre</div>
+      <h1 class="qa-headline">¿Preguntas?</h1>
+      <p class="lede">Sobre cualquier parte del proceso, técnicas, o casos de uso que tengan en mente.</p>
+      <div class="qa-meta">
+        <div><span class="dim">Speaker</span> · Martin Ramos Mejia</div>
+        <div><span class="dim">Email</span> · martinramosmejia@habi.co</div>
+      </div>
+    </div>
+    <div class="qa-right">
+      <div class="kicker">Para profundizar</div>
+      <div class="res-grid res-grid-3">
+
+        <div class="res-card">
+          <div class="res-source dim">DeepLearning.AI</div>
+          <h3>Spec-driven development with coding agents</h3>
+          <p class="small dim">Curso completo, gratuito.</p>
+          <a class="res-url" href="https://www.deeplearning.ai/short-courses/spec-driven-development-with-coding-agents/" target="_blank" rel="noopener">deeplearning.ai/short-courses/...</a>
+        </div>
+        <div class="res-card">
+          <div class="res-source dim">Addy Osmani · Google</div>
+          <h3>How to write good specs for AI agents</h3>
+          <p class="small dim">Blog post de referencia, formato práctico.</p>
+          <a class="res-url" href="https://addyosmani.com/blog/good-spec/" target="_blank" rel="noopener">addyosmani.com/blog/good-spec</a>
+        </div>
+        <div class="res-card">
+          <div class="res-source dim">Sebastian Raschka</div>
+          <h3>Components of a coding agent</h3>
+          <p class="small dim">Qué hay adentro de un coding agent.</p>
+          <a class="res-url" href="https://magazine.sebastianraschka.com" target="_blank" rel="noopener">magazine.sebastianraschka.com</a>
+        </div>
+      </div>
+      <div class="kicker mt-2">Referencias citadas</div>
+      <div class="res-grid res-grid-3">
+
+        <div class="res-card">
+          <div class="res-source dim">OpenAI</div>
+          <h3>Harness Engineering</h3>
+          <p class="small dim">El approach original sobre AGENTS.md.</p>
+          <a class="res-url" href="https://openai.com/index/harness-engineering/" target="_blank" rel="noopener">openai.com/index/harness-engineering</a>
+        </div>
+        <div class="res-card">
+          <div class="res-source dim">Anthropic</div>
+          <h3>Managed Agents</h3>
+          <p class="small dim">Workflows y agentes gestionados.</p>
+          <a class="res-url" href="https://www.anthropic.com/news/managed-agents" target="_blank" rel="noopener">anthropic.com/news/managed-agents</a>
+        </div>
+        <div class="res-card">
+          <div class="res-source dim">AlphaSignal</div>
+          <h3>A closer look at Harness Engineering</h3>
+          <p class="small dim">Por qué el harness &gt; el modelo crudo.</p>
+          <a class="res-url" href="https://alphasignalai.substack.com/p/a-closer-look-at-harness-engineering" target="_blank" rel="noopener">alphasignalai.substack.com/p/...</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+  </main>
+  <div class="hud" style="--progress: 0%"></div>
+  <aside class="notes-pane">
+<article class="note" data-idx="1"><h4>Slide 01</h4><p><strong>[1 minuto]</strong></p><p>Hoy vamos a hablar de cómo trabajar con coding agents de manera profesional.</p><p><strong>Andrej Karpathy</strong> - el tipo que inventó el término "vibe coding", ex-director de IA en Tesla y fundador de OpenAI - acaba de advertir en 2026 que hay un <strong>gap creciente</strong> entre usuarios de IA.</p><p>De un lado: Casual users que probaron ChatGPT gratis hace un año y piensan que la IA es puro hype, llena de errores y poco confiable.</p><p>Del otro lado: Power users que pagan por Claude Code, usan workflows estructurados, y tienen <strong>3 a 5 veces más productividad</strong>.</p><p><strong>La idea es este espacio de charla es entender de que forma podemos cruzar ese gap</strong> para ganar esa productividad.</p><p>La idea de base es simple: <strong>La calidad del código que produce el agent es directamente proporcional a la calidad de tu especificación</strong>.</p><p>Si tu spec (especificacion) es vaga, el código será inconsistente. Si tu spec es clara, el código será predecible y mantenible, al igual que la salida de lo que esperesl</p><p>No vamos a hablar de "pedirle cosas a Claude y esperar que funcione". Vamos a hablar de cómo <strong>pensar, planificar, y especificar ANTES</strong> de que el agent escriba una sola línea de código.</p></article>
+<article class="note" data-idx="2"><h4>Slide 02</h4><p><strong>[2 minutos]</strong></p><p>Levanten la mano los que alguna vez le pidieron algo a un coding agent y el resultado no fue lo que esperaban. [Pausa para manos]</p><p>Esto es súper común. Y no es culpa del agent. Es que le dimos instrucciones vagas.</p><p>Imaginen que van a un restaurante y dicen "haceme algo rico". El chef va a adivinar. Quizás te trae pizza, quizás sushi, quizás un bife. Podría ser bueno, podría no ser lo que querías.</p><p>Ahora imaginen que dicen: "Quiero spaghetti carbonara: pasta al dente, huevos, pancetta crocante, pecorino, pimienta negra. Sin crema." El chef sabe EXACTAMENTE qué hacer.</p><p><strong>Lo mismo pasa con coding agents.</strong> Instrucciones vagas = resultados impredecibles.</p><p><strong>La analogía de la receta de cocina</strong> es perfecta para entender spec-driven development. Y es exactamente lo que vamos a aprender hoy: cómo escribir "recetas" claras para que los agents produzcan exactamente lo que necesitamos.</p></article>
+<article class="note" data-idx="3"><h4>Slide 03</h4><p><strong>[1.5 minutos]</strong></p><p>Esto no es teoría. Hay data real de 2026 que muestra el impacto.</p><p>Teams que escriben specs antes de usar agents tienen <strong>67% menos rollbacks segun datos de industria</strong> - es decir, 67% menos veces que tienen que tirar código y empezar de nuevo.</p><p>Teams que usan spec-driven workflows son <strong>3 a 5 veces más productivos</strong> que teams que usan AI como simple autocomplete.</p><p>Y acá viene lo interesante: <strong>OpenAI publicó en febrero 2026</strong> cómo su equipo de Codex - solo 3 engineers - shipped <strong>1 millón de líneas de código</strong> usando exactamente el approach que vamos a ver hoy. La clave fue usar archivos AGENTS.md para guiar el comportamiento del agent. Zero líneas escritas a mano.</p><p>Y LangChain hizo un benchmark fascinante: tomaron el <strong>mismo modelo</strong> dos veces, cambiaron SOLO el harness - el contexto y las guías - y el performance saltó de 52.8% a 66.5%. <strong>Un 13.7% de improvement solo cambiando el contexto</strong>.</p><p>El término de industria para esto es <strong>"Harness Engineering"</strong>. Y el consenso es claro: "The harness design represents the actual competitive advantage, not raw model capability."</p><p><strong>El mensaje es claro</strong>: invertir tiempo en specs y harness te ahorra MUCHÍSIMO tiempo después.</p></article>
+<article class="note" data-idx="4"><h4>Slide 04</h4><p><strong>[1 minuto]</strong></p><p>El proceso tiene 3 fases principales, pero hoy nos vamos a enfocar en las dos primeras.</p><p><strong>Fase 1</strong> es pasar de una idea vaga a una especificación clara. Esto tiene tres pasos: Análisis (entender el problema), Ideación (explorar soluciones), y Especificación (bajar todo a un documento claro).</p><p><strong>Fase 2</strong> es crítica y refinamiento. Acá usamos al mismo y otro agente para criticar nuestra especificación, buscar huecos, identificar puntos ciegos. Hacemos múltiples rondas hasta estar satisfechos.</p><p><strong>Fase 3</strong> es planning e implementation, pero si las fases 1 y 2 están bien hechas, esta fase se simplifica, creo que la importancia que tiene esencialmente en planificacion es entender como incrementalmente queremos ir revisando y creando la solucion.</p></article>
+<article class="note" data-idx="5"><h4>Slide 05</h4><p><strong>[2 minutos]</strong></p><p>El primer paso es Análisis. Y acá tenemos un framework súper simple: <strong>Las 3 Preguntas</strong>.</p><p><strong>Pregunta 1: ¿Qué quiero lograr?</strong><br>No "quiero una app". Sino: "Quiero que los usuarios puedan registrar gastos en menos de 10 segundos, categorizar automáticamente, y ver un resumen mensual."</p><p>Eso es un outcome concreto. Medible. Verificable.</p><p><strong>Pregunta 2: ¿Qué NO quiero?</strong><br>Esto es igual de importante. "NO quiero que la app maneje pagos reales, solo tracking. NO quiero integraciones con bancos por ahora. NO quiero múltiples usuarios, solo uso personal."</p><p>Los límites son críticos. Le dicen al agent qué NO hacer.</p><p><strong>Pregunta 3: ¿Cómo sé que está done?</strong><br>"Está done cuando puedo agregar un gasto, verlo en la lista, y el total del mes se actualiza correctamente. Está done cuando funciona en mobile. Está done cuando carga en menos de 2 segundos."</p><p><strong>Regla de oro</strong>: Si no podés responder estas 3 preguntas con claridad, <strong>no estás listo para pedirle código al agent</strong>. Primero pensá, después ejecutá.</p></article>
+<article class="note" data-idx="6"><h4>Slide 06</h4><p><strong>[2 minutos]</strong></p><p>El paso 2 es Ideación. Acá es donde mucha gente se apresura. Dicen "ok, quiero una app web" y arrancan.</p><p><strong>Mejor approach</strong>: Usá al agent como <strong>thinking partner</strong> ANTES de decidir.</p><p>Por ejemplo, este prompt: "Quiero trackear gastos personales. Explorá 3 approaches diferentes: una app web simple, un bot de Telegram, o Google Sheets con Apps Script. Para cada uno, dame pros, cons, y estimación de complejidad."</p><p>El agent va a pensar en trade-offs que quizás no consideraste:<br>- App web = más flexible, pero necesitás hosting<br>- Bot de Telegram = super rápido de usar, pero limitado en UI<br>- Google Sheets = cero setup, pero menos control</p><p><strong>Este es el momento de explorar</strong>. No de committearse a una solución. Dejá que el agent te muestre opciones.</p><p>Y acá viene un tip importante: <strong>Usá role prompting</strong>. Podés decir "Actuá como un arquitecto de software con 10 años de experiencia. Qué approach recomendarías y por qué?"</p><p>Diferentes roles dan diferentes perspectivas. Probá "actuá como un designer de UX", "actuá como un performance engineer". Cada uno va a resaltar cosas distintas.</p></article>
+<article class="note" data-idx="7"><h4>Slide 07</h4><p><strong>[2 minutos]</strong></p><p>Ahora sí, paso 3: <strong>Especificación</strong>. Bajar todo a un documento claro.</p><p>GitHub analizó más de 2,500 proyectos con coding agents y encontró que las specs exitosas tienen <strong>7 elementos</strong>:</p><p>1. <strong>Outcomes</strong>: Qué debe lograr el sistema<br>2. <strong>Scope Boundaries</strong>: Qué está in scope, qué out of scope<br>3. <strong>Constraints</strong>: Tech stack que tenés que usar, requirements de performance, deadlines<br>4. <strong>Prior Decisions</strong>: Las decisiones arquitecturales ya tomadas y POR QUÉ<br>5. <strong>Task Breakdown</strong>: Fases, milestones, dependencies<br>6. <strong>Edge Cases</strong>: Casos extremos que hay que considerar<br>7. <strong>Verification Criteria</strong>: Tabla que mapea cada requirement a un test específico</p><p>El séptimo elemento es posiblemente el más importante: <strong>Verification Criteria</strong>. Esto es lo que transforma tu spec de un documento en algo ejecutable.</p><p>[MOSTRAR EN SLIDE: Ejemplo de tabla]<br>```<br>| Requirement | Test Type | Test Case | Success Criteria |<br>|-------------|-----------|-----------|------------------|<br>| Valid registration | Unit | test_register_valid | User created, returns user_id |<br>| Duplicate email | Unit | test_duplicate_email | Returns 409, "Email exists" |<br>| Email format | Unit | test_email_format | Rejects invalid formats |<br>```</p><p>Para cada requirement, defines: qué tipo de test necesitás, qué caso específico vas a probar, y qué significa éxito. Esto conecta directamente con la fase 3 donde generás los tests ANTES de implementar.</p><p><strong>Formato recomendado</strong>: Markdown simple. Fácil de leer, fácil de editar, funciona en cualquier editor.</p><p><strong>Versionado</strong>: Git. Tratá tu spec como código. Cada cambio, un commit. Esto te permite volver atrás si una decisión no funcionó.</p><p><strong>Tip importante</strong>: Incluí <strong>ejemplos concretos</strong> en la spec. No digas "la app debe ser rápida". Decí "la app debe cargar la lista de gastos en menos de 2 segundos con 1000 entries".</p><p>Ejemplos concretos le dan al agent referencias claras. Esto se llama <strong>few-shot prompting</strong>: le mostrás ejemplos de lo que querés, no solo le describís con palabras.</p></article>
+<article class="note" data-idx="8"><h4>Slide 08</h4><p><strong>[3 minutos]</strong></p><p>Ahora viene la parte más importante: <strong>Crítica Multi-Round</strong>.</p><p>Acá es donde usás al agent para <strong>mejorar tu propio pensamiento</strong> ANTES de pedirle que escriba código.</p><p>El loop es simple:</p><p><strong>Round 1 - Gaps</strong>: "Revisá esta spec. ¿Qué estoy omitiendo? ¿Qué requirements faltan?"</p><p>El agent va a encontrar cosas. "No especificaste qué pasa si el usuario ingresa un gasto negativo. No mencionaste qué categorías de gastos vas a tener. No definiste el formato de fecha."</p><p>Actualizás la spec.</p><p><strong>Round 2 - Edge Cases</strong>: "¿Qué podría salir mal? ¿Qué edge cases no estoy considerando?"</p><p>El agent piensa en escenarios: "Qué pasa si el usuario ingresa 50 gastos el mismo día? Qué pasa si cambian de timezone? Qué pasa si borran un gasto por error?"</p><p>Actualizás la spec otra vez.</p><p><strong>Round 3 - Blind Spots</strong>: "¿Qué no estoy considerando? ¿Qué suposiciones estoy haciendo que podrían ser incorrectas?"</p><p>El agent cuestiona tus assumptions: "Asumiste que todos los gastos son en una sola moneda. Asumiste que el usuario siempre tiene internet. Asumiste que nadie más va a usar la app."</p><p><strong>Y podés seguir</strong>. No hay número mágico de rounds. <strong>Parás cuando estás confiado</strong> de que la spec es sólida.</p><p><strong>Dato clave</strong>: Research muestra que este proceso de reflection mejora la calidad del código final de <strong>80% a 91%</strong>. Es decir, casi 10 puntos porcentuales de mejora solo por hacer crítica antes de codear.</p><p><strong>Pro tip para los más avanzados</strong>: Pueden hacer rondas de critique con diferentes modelos - Claude, GPT-4, Gemini. Cada uno tiene fortalezas distintas, y esto reduce blind spots. Es como tener diferentes expertos revisando tu spec.</p></article>
+<article class="note" data-idx="9"><h4>Slide 09</h4><p><strong>[2 minutos]</strong></p><p>Una técnica super poderosa es <strong>Role-Based Critique</strong>.</p><p>En vez de solo decir "revisá la spec", le das al agent un <strong>rol específico</strong>.</p><p>"Revisá esta spec como un security engineer. ¿Qué vulnerabilidades o security gaps ves?"</p><p>El agent va a pensar desde esa perspectiva: "No hay validación de inputs. No hay rate limiting. Las credenciales están hardcoded."</p><p>"Ahora revisá como un UX designer. ¿Es intuitivo el flujo? ¿Qué frustraciones tendrá el usuario?"</p><p>Perspectiva completamente diferente: "El usuario tiene que hacer 5 clicks para un gasto simple. No hay feedback visual cuando se guarda. El botón de categoría está escondido."</p><p>"Ahora como performance engineer. ¿Qué podría causar problemas de escalabilidad?"</p><p>Otra vez, diferentes issues: "Estás cargando todos los gastos del año de una vez. No hay paginación. Cada gasto hace una query separada a la DB."</p><p><strong>Cada rol encuentra problemas distintos</strong>. Es como tener un equipo completo revisando tu spec, pero todo desde el mismo agent.</p><p><strong>Tip de model settings</strong>: Para role-based critique, usá temperature más alta (~0.8-1.0). Querés que el agent sea creativo y piense en escenarios diversos. Para implementation después, bajás temperature (~0.2-0.4) para que sea más deterministic.</p></article>
+<article class="note" data-idx="10"><h4>Slide 10</h4><p><strong>[2 minutos]</strong></p><p>Otra técnica crítica: <strong>Chain of Thought</strong>.</p><p>La idea es hacer que el agent <strong>piense en voz alta</strong> antes de darte una respuesta.</p><p><strong>Prompt débil</strong>: "¿Esta spec está completa?"</p><p>El agent te va a decir "Sí, parece completa" o "Falta mencionar X". Es superficial.</p><p><strong>Prompt fuerte</strong>: "Antes de responder si la spec está completa, pensá paso a paso: Primero, ¿qué componentes necesita el sistema? Segundo, ¿cada componente está especificado claramente? Tercero, ¿las interacciones entre componentes están documentadas? Cuarto, ¿los edge cases están cubiertos? Ahora sí, respondé si está completa."</p><p>Cuando el agent tiene que pensar paso a paso, encuentra <strong>mucho más</strong>. Es como si le estuvieras diciendo "no me des la respuesta rápida, pensá profundo".</p><p><strong>Por qué funciona</strong>: Los LLMs son mejores cuando razonan explícitamente. Si solo les preguntás "¿está bien?", van por el camino más corto. Si les pedís que razonen paso a paso, activan mejor su "pensamiento".</p><p><strong>Aplicalo en critique</strong>: "Antes de decirme qué falta, primero identificá todos los user flows. Después, para cada flow, chequeá si está completo. Después chequeá dependencies. Después chequeá error handling."</p><p>Vas a tener respuestas <strong>mucho más profundas</strong>.</p></article>
+<article class="note" data-idx="11"><h4>Slide 11</h4><p><strong>[2 minutos]</strong></p><p>Una técnica súper práctica es el <strong>Three-Tier Boundary System</strong>.</p><p>Le das al agent tres categorías de reglas claras:</p><p><strong>✅ ALWAYS - Cosas que debe hacer siempre sin preguntar</strong>:<br>- "Siempre corré todos los tests después de hacer cambios"<br>- "Siempre seguí las convenciones de naming del proyecto"<br>- "Siempre usá los patterns que ya existen en el código"</p><p>Esto le da autonomía en cosas que son safe.</p><p><strong>⚠️ ASK FIRST - Cosas de alto impacto que requieren aprobación</strong>:<br>- "Pedí aprobación antes de cambiar el schema de la base de datos"<br>- "Consultá antes de agregar una nueva librería externa"<br>- "Avisá si necesitás modificar la arquitectura"</p><p>Esto previene que el agent haga cambios grandes sin que vos sepas.</p><p><strong>🚫 NEVER - Hard stops, prohibido absolutamente</strong>:<br>- "NUNCA commiteés passwords o secrets"<br>- "NUNCA edites archivos en node_modules/ o vendor/"<br>- "NUNCA cambies configuraciones de producción"</p><p>Esto es safety crítico.</p><p><strong>Por qué funciona</strong>: Reduce la "creatividad" del agent en lugares donde no la querés. El agent no tiene que adivinar "¿puedo hacer esto?". Tiene reglas claras.</p><p><strong>Y acá va un tip avanzado</strong>: Agregá <strong>"trigger prompts"</strong> a cada boundary. Le estás diciendo al agent: "cuando veas estas palabras clave en el contexto, aplicá esta regla automáticamente".</p><p>Por ejemplo, en el NEVER: "Trigger: When you see: cursor.execute, raw query, SQL string" - Cuando el agent ve esas palabras, sabe que no debe usar raw SQL.</p><p>Esto hace que las boundaries sean <strong>proactivas</strong> - el agent no espera a meter la pata, detecta el pattern y aplica la regla. Es como poner speed bumps en los lugares correctos.</p><p><strong>Incluilo en tu spec</strong>: Tené una sección que se llame "Boundaries" con estas tres categorías y sus triggers. El agent las va a respetar.</p></article>
+<article class="note" data-idx="12"><h4>Slide 12</h4><p><strong>[2 minutos]</strong></p><p>Hablemos un segundo de <strong>model settings</strong> porque esto hace diferencia.</p><p><strong>Temperature</strong> es el setting más importante. Controla qué tan "creativo" vs "determinista" es el agent.</p><p><strong>Para Ideación y Critique</strong> (Fases 1 y 2): Usá temperature <strong>alta</strong> (0.8 a 1.0)</p><p>¿Por qué? Porque querés que el agent explore opciones diversas, piense en edge cases creativos, te dé perspectivas que no consideraste.</p><p>Temperature alta = más variedad en las respuestas. Corrés el mismo prompt 3 veces, vas a tener 3 respuestas distintas. Eso es BUENO en critique porque cada respuesta puede encontrar issues diferentes.</p><p><strong>Para Implementation</strong> (Fase 3): Usá temperature <strong>baja</strong> (0.2 a 0.4)</p><p>¿Por qué? Porque querés código consistente y predecible. No querés que el agent "se ponga creativo" con la arquitectura. Querés que siga la spec al pie de la letra.</p><p>Temperature baja = más determinismo. Corrés el mismo prompt 3 veces, vas a tener respuestas muy similares.</p><p><strong>Otros settings útiles</strong>:<br>- <strong>Max tokens</strong>: 4000-8000 para specs largas (que el agent pueda generar respuestas completas)<br>- <strong>Top-p</strong>: 0.9-0.95 (balanceado entre diversidad y coherencia)<br>- <strong>Presence penalty</strong>: 0.1-0.3 (evita que el agent se repita)</p><p><strong>Tip práctico en Claude Code</strong>: Cuando estés en fase de critique, literalmente decí en el prompt "sé creativo, pensá en escenarios diversos". Cuando estés en implementation, decí "seguí la spec exactamente, no improvises".</p><p><strong>Actualización Abril 2026 - Opus 4.7</strong>: El nuevo modelo es más conservador por default. Si usás Opus 4.7 para critique, agregá explícitamente: "If you can think of an ambitious analysis that covers multiple areas or reveals fundamental assumptions, prefer that over listing small individual gaps." Sin esto, Opus 4.7 va a dar análisis muy atómicos y conservadores. En cambio, para verification tasks (tests, PR review), Opus 4.7 es excelente - tiene 98.5% accuracy en precise UI tasks vs 54.5% del anterior.</p></article>
+<article class="note" data-idx="13"><h4>Slide 13</h4><p><strong>[2 minutos]</strong></p><p>Ok, ya tenés tu spec refinada después de múltiples rounds de critique. Estás confiado. <strong>Ahora qué?</strong></p><p><strong>No le digas al agent "empezá a codear" todavía.</strong></p><p>Primero, pedile un <strong>plan</strong>.</p><p>En Claude Code específicamente, tenés el comando <strong>/plan</strong>.</p><p>Le das la spec y le decís "/plan - basandote en el spec x cómo implementarías esto?"</p><p>El agent te va a dar:<br>- Breakdown de tasks (qué hacer primero, segundo, tercero)<br>- Files que va a crear o modificar<br>- Dependencies entre tasks<br>- Risks que identifica</p><p><strong>Y VOS REVISÁS EL PLAN ANTES DE QUE ESCRIBA CÓDIGO.</strong></p><p>Esto es critical. Si el agent está por elegir la base de datos equivocada, o está por usar una arquitectura que no escala, lo catcheás <strong>en el plan</strong>.</p><p>Cambiar un plan = 30 segundos. Cambiar código = horas de refactoring.</p><p><strong>Data</strong>: Catching errores en la fase de planning es <strong>10 a 100 veces más barato</strong> que fixing después.</p><p><strong>Best practice</strong>: Siempre /plan antes de medium o large tasks. Para tasks muy chicos (agregar un botón), podés skipear. Pero para features completas, SIEMPRE plan first.</p></article>
+<article class="note" data-idx="14"><h4>Slide 14</h4><p><strong>[3 minutos]</strong></p><p>Veamos un ejemplo end-to-end conceptual: una app de expense tracking.</p><p><strong>Fase 1 - Scope to Spec</strong>:</p><p>Empezamos con las 3 preguntas:<br>- Qué quiero: Users puedan registrar gastos, categorizarlos, ver resumen mensual<br>- Qué NO quiero: Sin pagos reales, sin múltiples usuarios, sin integraciones bancarias<br>- Cómo sé que funciona: Puedo agregar gasto en &lt;10 seg, categorización funciona, totales calculan correctamente</p><p>Ideación: Exploramos 3 opciones con el agent (web app, bot de Telegram, Google Sheets). Decidimos PWA (Progressive Web App) porque funciona en mobile y desktop, y puede trabajar offline.</p><p>Spec: Escribimos los 6 elementos en spec.md. Outcomes, boundaries, constraints (tech stack React + Firebase), prior decisions (por qué PWA), task breakdown, verification criteria.</p><p><strong>Fase 2 - Critique Multi-Round</strong>:</p><p>Round 1: "¿Qué estoy omitiendo?"<br>- Agent encuentra: no especificaste validación de inputs (gastos negativos?), no mencionaste cómo manejar diferentes monedas<br>- Actualizamos spec</p><p>Round 2: "¿Qué podría salir mal?"<br>- Agent: edge cases de timezone (usuario viaja a otro país?), múltiples gastos el mismo día, qué pasa si se borra categoría que tiene gastos<br>- Actualizamos spec</p><p>Round 3: "¿Qué no consideré?"<br>- Agent: performance con 10K+ gastos, qué pasa sin internet (offline support?), backup de datos<br>- Actualizamos spec</p><p><strong>Fase 3 - Planning</strong>:</p><p>Le damos la spec final al agent con /plan.</p><p>Agent propone: Primero DB schema (categorías, gastos, users). Después API endpoints (create expense, list expenses, get summary). Después UI components.</p><p>Revisamos el plan. Todo tiene sentido. Aprobamos.</p><p><strong>Fase 4 - Implementation</strong>:</p><p>Agent ejecuta. Va paso a paso. Después de cada milestone, corre tests. Verifica que cumple la spec.</p><p>Nosotros hacemos checkpoints. "¿Los tests pasan? ¿Cumple los acceptance criteria de la spec?"</p><p>Al final, tenemos una app que funciona exactamente como la especificamos.</p><p><strong>Tiempo total</strong>: Quizás 2-3 horas incluyendo todas las fases. Si hubiéramos ido directo a "Claude haceme una app", probablemente 2 días de trial and error.</p></article>
+<article class="note" data-idx="15"><h4>Slide 15</h4><p><strong>[3 minutos]</strong></p><p>Ahora hablemos del <strong>siguiente nivel</strong>: Context Building.</p><p>Hasta ahora hablamos de specs para <strong>features individuales</strong>. Pero cuando trabajás en proyectos más grandes, necesitás documentos de <strong>contexto más amplio</strong>.</p><p><strong>PROJECT CONSTITUTION</strong>:</p><p>Es un documento de alto nivel que define:<br>- <strong>Mission</strong>: Por qué existe este proyecto<br>- <strong>Tech philosophy</strong>: Principios que guían decisiones (ej: "Preferimos simplicidad sobre features", "Performance es crítico")<br>- <strong>Decisiones arquitecturales fundamentales</strong>: Por qué usamos X framework, por qué esta estructura<br>- <strong>Roadmap</strong>: Hacia dónde va el proyecto en los próximos 6-12 meses</p><p>¿Por qué importa? Porque el agent puede mantener <strong>alignment filosófico</strong> a través de múltiples features. Si el constitution dice "siempre optimizamos para mobile first", el agent va a tener eso en mente en cada feature.</p><p><strong>STRATEGY DOCS</strong>:</p><p>Documentos que explican:<br>- Por qué estamos construyendo esta feature ahora (timing, business value)<br>- Qué problemas del usuario resuelve<br>- Cómo se conecta con otras partes del sistema</p><p>Esto le da al agent <strong>contexto de negocio</strong>. No solo "construí esto", sino "construí esto porque resuelve X problema para Y usuarios".</p><p><strong>STYLE GUIDES &amp; PATTERNS</strong>:</p><p>Documentación de:<br>- Convenciones de código (naming, estructura de files)<br>- Patterns arquitecturales establecidos (cómo hacemos auth, cómo manejamos errors)<br>- <strong>Ejemplos concretos</strong> de código bien hecho del proyecto</p><p>Esto es <strong>few-shot prompting a escala de proyecto</strong>. Le mostrás al agent "así es cómo hacemos las cosas acá".</p><p><strong>Cómo usar estos docs</strong>:</p><p>En tu prompt inicial para una feature, decís:</p><p>"Antes de empezar, leé:<br>- project_constitution.md (nuestra filosofía)<br>- strategy/expense_tracking.md (por qué esta feature)<br>- guides/react_patterns.md (cómo escribimos React)</p><p>Ahora sí, implementá según spec.md"</p><p>El agent va a tener <strong>contexto completo</strong> y va a producir código que no solo funciona, sino que está <strong>alineado con la cultura del proyecto</strong>.</p><p><strong>Beneficio clave</strong>: Esto reduce "context drift". Sin estos docs, cada sesión con el agent es como empezar de cero. Con estos docs, hay <strong>continuidad</strong>.</p></article>
+<article class="note" data-idx="16"><h4>Slide 16</h4><p><strong>[3 minutos]</strong></p><p>Acá viene un punto súper importante que diferencia <strong>proyectos one-off</strong> de <strong>proyectos sostenibles</strong>: el <strong>Learning Loop</strong>.</p><p>La idea es simple pero poderosa: <strong>Lo que aprendés en cada fase se convierte en guidelines para el agent</strong>.</p><p><strong>Esto es lo que la industria llama "Harness Engineering"</strong>. Y no es invento mío - es exactamente lo que OpenAI publicó en febrero 2026.</p><p><strong>Cómo funciona</strong>:</p><p>Después de completar una feature, documentás learnings en archivos específicos: <strong>AGENTS.md</strong> o <strong>CLAUDE.md</strong> (depende de la herramienta).</p><p>¿Qué documentás?</p><p><strong>Decisiones tomadas y por qué</strong>:<br>"Decidimos usar local storage en vez de cookies para preferencias de usuario porque necesitamos más de 4KB de espacio."</p><p><strong>Patterns que funcionaron</strong>:<br>"El pattern de validation en el cliente antes de enviar al backend redujo 80% de errores. Usarlo siempre en forms."</p><p><strong>Anti-patterns que NO funcionaron</strong>:<br>"NO usar inline styles en React components. Rompe el theming. Siempre usar styled-components o CSS modules."</p><p><strong>Edge cases descubiertos</strong>:<br>"Si el usuario ingresa fecha futura, mostrar warning. Caso descubierto en testing."</p><p><strong>Constraints específicos del proyecto</strong>:<br>"API tiene rate limit de 100 req/min. Implementar debouncing en search."</p><p><strong>Por qué importa</strong>:</p><p>En la próxima sesión con el agent, en tu prompt inicial decís:</p><p>"Leé AGENTS.md antes de empezar. Seguí los patterns documentados."</p><p>El agent va a tener <strong>context de learnings previos</strong>. No va a repetir mistakes. Va a seguir patterns que ya sabés que funcionan.</p><p><strong>OpenAI lo dice así</strong>: "El agent no necesita más instrucciones. Necesita un mundo donde hacer lo correcto es obvio y lo incorrecto es difícil."</p><p><strong>Eso es exactamente lo que estás construyendo con AGENTS.md</strong>: guías de rieles que mantienen al agent on-track.</p><p><strong>Ejemplo real</strong>:</p><p>Session 1: Construís feature de authentication. Descubrís que JWT tokens deben tener 1-hour expiry para security.</p><p>Documentás en AGENTS.md:<br>```<br>## Authentication<br>- JWT expiry: 1 hour (security requirement)<br>- Refresh token: 7 days<br>- Always use httpOnly cookies for tokens<br>- Never store tokens in localStorage (XSS risk)<br>```</p><p>Session 2: Construís feature de user profiles. Agent lee AGENTS.md. Automáticamente implementa auth correctamente sin que vos tengas que re-explicar todo.</p><p><strong>El agent aprende de lo que descubriste antes.</strong></p></article>
+<article class="note" data-idx="17"><h4>Slide 17</h4><p><strong>[2.5 minutos]</strong></p><p>Otra técnica crítica que hace diferencia: <strong>Proceso Iterativo 1-a-1</strong> en las fases de Análisis e Ideación.</p><p><strong>El anti-pattern común</strong>:</p><p>Dump toda la información junta: "Quiero una app que haga X, Y, Z, debe tener features A, B, C, considerando constraints D, E, F..."</p><p>El agent recibe TODO de golpe y tiene que adivinar qué priorizar.</p><p><strong>El better approach: 1-a-1 Interactive</strong>:</p><p>Vas pregunta por pregunta, dando feedback incremental.</p><p><strong>Ejemplo de flow</strong>:</p><p><strong>Tu pregunta inicial</strong>: "Para una app de expense tracking, qué tech stack recomendás?"</p><p><strong>Agent responde</strong>: "Opciones: React SPA + Firebase, Next.js + Supabase, o Vue + custom backend. Depende de tus priorities..."</p><p><strong>Vos das contexto</strong>: "Priorizo speed to market y no quiero manejar backend. ¿Qué cambia?"</p><p><strong>Agent refina</strong>: "Entonces React + Firebase o Next.js + Supabase. Ambos son managed backends. Firebase tiene mejor ecosystem para mobile si pensás expandir..."</p><p><strong>Vos das más contexto</strong>: "Mobile es importante. Vamos con Firebase."</p><p><strong>Agent continúa</strong>: "Perfecto. Para state management con Firebase, recomiendo Zustand sobre Redux porque..."</p><p><strong>Vos das feedback</strong>: "Zustand me gusta por simplicidad. Confirmado."</p><p><strong>¿Ven el pattern?</strong></p><p>Cada respuesta del agent <strong>incorpora el contexto de la anterior</strong>. Cada decisión tuya <strong>informa la siguiente pregunta</strong> del agent.</p><p>Al final, tienen una spec mucho más <strong>aligned</strong> porque el agent entendió no solo QUÉ querés, sino <strong>POR QUÉ tomaste cada decisión</strong>.</p><p><strong>Beneficio crítico</strong>:</p><p>Cuando después el agent genera el plan o escribe código, sabe el <strong>rationale</strong> detrás de cada choice. No solo "usa Firebase" sino "usa Firebase PORQUE priorizamos speed to market y necesitamos mobile support".</p><p>Ese rationale lo hace tomar mejores micro-decisions en implementation.</p><p><strong>Tip práctico</strong>:</p><p>En Análisis/Ideación, <strong>no tengas prisa</strong>. Dedicá 10-15 minutos a este back-and-forth. Vas a ahorrar HORAS después en refactoring.</p><p>Y después de la sesión, <strong>documentás este rationale en AGENTS.md</strong>:</p><p>```markdown<br>## Tech Stack Decision<br>- Chose Firebase over custom backend<br>- Rationale: Speed to market + mobile support priority<br>- Implication: Use Zustand for state (simpler than Redux)<br>```</p><p>Próxima feature, el agent ya sabe el philosophy y continúa consistent.</p></article>
+<article class="note" data-idx="18"><h4>Slide 18</h4><p><strong>[2 minutos]</strong></p><p>Antes de cerrar, hablemos de <strong>Red Flags</strong> - cosas que NO hacer.</p><p><strong>Red Flag 1</strong>: Prompts vagos tipo "haceme algo copado". Ya lo discutimos. El agent no puede leer tu mente.</p><p><strong>Red Flag 2</strong>: Dumping una spec de 50 páginas en un solo prompt. El agent se va a perder. Mejor: modular la spec, darle secciones relevantes por task.</p><p><strong>Red Flag 3</strong>: Asumir que si los tests pasan, el código es correcto. Los tests pueden estar incompletos. El código puede pasar tests pero no resolver el problema real. <strong>Siempre revisá</strong>.</p><p><strong>Red Flag 4</strong>: Skipear la review del plan. "Eh, el agent sabe lo que hace." No. Revisá el plan siempre. Catching un error en el plan es <strong>100 veces más barato</strong> que fixing después.</p><p><strong>Red Flag 5</strong>: Usar el mismo temperature para todo. Critique y ideación necesitan temperature alta (creatividad). Implementation necesita temperature baja (determinismo). Ajustá según fase.</p><p><strong>Red Flag 6</strong>: No versionar la spec. Escribís una spec, la cambiás 10 veces, y después no recordás por qué hiciste cierto cambio. Usá Git. Cada decision = un commit con mensaje claro.</p><p><strong>Eviten estos red flags</strong> y van a tener muchísimo mejor experiencia con coding agents.</p></article>
+<article class="note" data-idx="19"><h4>Slide 19</h4><p><strong>[2 minutos]</strong></p><p>Ok, cerremos con <strong>Quick Wins</strong> - cosas que pueden empezar a hacer HOY que van a tener impacto inmediato.</p><p><strong>Quick Win 1</strong>: Respondé las 3 preguntas ANTES de prompt. ¿Qué quiero? ¿Qué NO quiero? ¿Cómo sé que funciona? Si no podés responder claras, no estás listo para el agent.</p><p><strong>Quick Win 2</strong>: Hacé al menos 1 round de critique. Aunque sea uno. Prompt simple: "Revisá esta idea. ¿Qué estoy omitiendo?" Ya con eso van a encontrar huecos que no vieron.</p><p><strong>Quick Win 3</strong>: Escribí verification criteria ANTES de codear. Una tabla simple: requirement → test → success criteria. Esto conecta spec con testing.</p><p><strong>Quick Win 4</strong>: Usá un quality gate checklist. Score de 25+/30 puntos antes de pasar a planning. Asegurá que la spec está completa.</p><p><strong>Quick Win 5</strong>: En Claude Code, usá /plan antes de escribir código. Siempre. Review el plan. Si algo no tiene sentido, arreglalo ANTES del código.</p><p><strong>Quick Win 6</strong>: Escribí tus decisions en un archivo .md. Aunque sean bullets simples. "Decidimos usar Firebase porque..." "No vamos a soportar múltiples monedas porque..." Esto les da memoria a través de sesiones.</p><p><strong>Quick Win 7</strong>: Probá role-based critique. Una sola vez. "Revisá esto como security engineer." Van a ver qué tipo de issues encuentra que no encontraste vos.</p><p><strong>Solo con estos 7 quick wins</strong>, sin hacer el proceso completo, ya van a ver mejora inmediata en la calidad de lo que producen con agents.</p><p>Y después, a medida que se sienten cómodos, agregan más: multi-round critique, chain of thought, boundaries, context building.</p></article>
+<article class="note" data-idx="20"><h4>Slide 20</h4><p><strong>[2 minutos]</strong></p><p>Recap rápido de lo que vimos:</p><p><strong>De Scope a Spec</strong>: Las 3 preguntas fundamentales, fase de ideación colaborando con el agent, bajar a spec con los 6 elementos.</p><p><strong>Crítica Multi-Round</strong>: Buscar gaps, edge cases, blind spots. Iterar hasta estar satisfechos.</p><p><strong>Técnicas</strong>: Role-based critique para diferentes perspectivas, Chain of Thought para reasoning profundo, Three-Tier Boundaries para reglas claras.</p><p><strong>Model Settings</strong>: Temperature alta para critique y exploración, baja para implementation.</p><p><strong>Context Building</strong>: Constitution del proyecto, strategy docs, style guides. Mantener alignment a través de sesiones.</p><p><strong>Y el mensaje final, el más importante</strong>:</p><p>&gt; "Invertí tiempo en PENSAR antes de EJECUTAR.<br>&gt;<br>&gt; La spec es tu pensamiento hecho explícito.<br>&gt; El agent ejecuta tu pensamiento.<br>&gt;<br>&gt; Pensamiento claro = Código claro."</p><p>Los coding agents son <strong>increíblemente poderosos</strong>. Pero su poder depende 100% de la claridad de tu pensamiento.</p><p>Si tu pensamiento es confuso, el código va a ser confuso. Si tu pensamiento es claro, el código va a ser claro.</p><p><strong>Spec-Driven Development</strong> es simplemente la disciplina de hacer tu pensamiento explícito ANTES de ejecutar.</p><p>Y con esa disciplina, van a ver que los agents pasan de ser "frustrantes" a ser <strong>multiplicadores reales de productividad</strong>.</p></article>
+<article class="note" data-idx="21"><h4>Slide 21</h4><p><strong>[Hasta completar 30 min]</strong></p><p>Perfecto, tenemos tiempo para preguntas.</p><p>Si quieren profundizar después de la charla, les dejo algunos recursos excelentes:</p><p><strong>DeepLearning.AI</strong> tiene un curso completo sobre Spec-Driven Development con Coding Agents. Es gratis, muy bien hecho.</p><p><strong>GitHub Spec Kit</strong> es una herramienta y framework open source que implementa muchas de estas ideas.</p><p><strong>Addy Osmani</strong> (Developer Advocate de Google) tiene un blog post increíble sobre cómo escribir good specs para AI agents.</p><p><strong>Sebastian Raschka</strong> tiene un artículo técnico sobre los componentes internos de coding agents, si quieren entender cómo funcionan por dentro.</p><p>¿Preguntas? Pueden ser sobre cualquier parte del proceso, técnicas específicas, o casos de uso que tengan en mente.</p></article>
+  </aside>
+  <div class="hint">← → navegar · <kbd>n</kbd> notas · <kbd>f</kbd> fullscreen</div>
+<script>
+(function () {
+  const slides = Array.from(document.querySelectorAll('.slide'));
+  const notes = Array.from(document.querySelectorAll('.notes-pane .note'));
+  const total = slides.length;
+  const hud = document.querySelector('.hud');
+  const notesPane = document.querySelector('.notes-pane');
+
+  function go(n) {
+    n = Math.max(1, Math.min(total, n));
+    slides.forEach(s => s.classList.toggle('active', +s.dataset.idx === n));
+    notes.forEach(s => s.classList.toggle('active', +s.dataset.idx === n));
+    hud.style.setProperty('--progress', (n / total * 100) + '%');
+    if (location.hash !== '#' + n) history.replaceState(null, '', '#' + n);
+  }
+  function current() {
+    return parseInt((location.hash || '#1').slice(1), 10) || 1;
+  }
+  function toggleNotes() { notesPane.classList.toggle('open'); }
+
+  document.addEventListener('keydown', (e) => {
+    if (e.target.matches('input, textarea')) return;
+    if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown') { e.preventDefault(); go(current() + 1); }
+    else if (e.key === 'ArrowLeft' || e.key === 'PageUp') { e.preventDefault(); go(current() - 1); }
+    else if (e.key === 'Home') go(1);
+    else if (e.key === 'End') go(total);
+    else if (e.key === 'n' || e.key === 'N') toggleNotes();
+    else if (e.key === 'f' || e.key === 'F') {
+      if (!document.fullscreenElement) document.documentElement.requestFullscreen();
+      else document.exitFullscreen();
+    }
+  });
+
+  // Click left/right halves to navigate
+  document.addEventListener('click', (e) => {
+    if (e.target.closest('a, button, .notes-pane')) return;
+    const w = window.innerWidth;
+    if (e.clientX < w * 0.35) go(current() - 1);
+    else if (e.clientX > w * 0.65) go(current() + 1);
+  });
+
+  window.addEventListener('hashchange', () => go(current()));
+  go(current());
+})();
+</script>
+</body>
+</html>
