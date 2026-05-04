@@ -1,0 +1,1371 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Git/GitHub para AI Builders</title>
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+:root {
+  --bg: #000;
+  --bg-elev: #0d0d0f;
+  --bg-card: #131318;
+  --text: #f3f4f7;
+  --dim: #8b8e98;
+  --light: #b6b9c2;
+  --line: #232329;
+  --blue: #0a84ff;
+  --green: #30d158;
+  --orange: #ff9f0a;
+  --purple: #bf5af2;
+  --red: #ff453a;
+  --teal: #64d2ff;
+  --pink: #ff375f;
+}
+html, body {
+  width: 100%; height: 100%; overflow: hidden;
+  font-family: 'Inter', 'SF Pro Display', system-ui, -apple-system, 'Helvetica Neue', sans-serif;
+  background: var(--bg); color: var(--text);
+  font-size: 19px; line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+@font-face { font-family: 'Inter'; font-weight: 100 900; font-style: normal; font-display: swap;
+             src: url('https://rsms.me/inter/font-files/InterVariable.woff2') format('woff2'); }
+.deck { position: relative; width: 100vw; height: 100vh; }
+
+/* Slide chrome */
+.slide {
+  position: absolute; inset: 0; display: none;
+  flex-direction: column; padding: 3.5rem 4.5rem 3rem;
+}
+.slide.active { display: flex; }
+.slide.cover { padding: 0; background: radial-gradient(circle at 22% 20%, #0d1a2b 0%, #000 55%); }
+
+/* Header */
+.hdr { display: flex; justify-content: space-between; align-items: center;
+       margin-bottom: 1.6rem; color: var(--dim); font-size: 0.9rem; }
+.eyebrow { letter-spacing: 0.14em; text-transform: uppercase; font-weight: 600; color: var(--light); }
+.page { font-variant-numeric: tabular-nums; color: var(--dim); }
+
+/* Titles */
+.title-block { margin-bottom: 1.4rem; }
+.title-block .kicker { color: var(--blue); font-weight: 600; font-size: 0.95rem;
+                       letter-spacing: 0.04em; margin-bottom: 0.3rem; }
+.slide h1 { font-size: 2.85rem; font-weight: 700; line-height: 1.08; letter-spacing: -0.02em; }
+.slide h2 { font-size: 1.7rem; font-weight: 700; line-height: 1.18; letter-spacing: -0.01em; }
+.slide h3 { font-size: 1.2rem; font-weight: 700; margin-bottom: 0.5rem; }
+.slide p { font-size: 1.05rem; }
+.slide .lede { font-size: 1.25rem; color: var(--light); margin-bottom: 1.4rem; max-width: 60rem; }
+
+/* Layout helpers */
+.grow { flex: 1; }
+.cols-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1.2rem; }
+.cols-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1.2rem; }
+.mt-1 { margin-top: 0.6rem; }
+.mt-2 { margin-top: 1.1rem; }
+.mt-3 { margin-top: 1.6rem; }
+.dim { color: var(--dim); }
+.light { color: var(--light); }
+.small { font-size: 0.95rem; }
+
+/* Cards */
+.card { background: var(--bg-card); border-radius: 14px; padding: 1.4rem 1.5rem;
+        display: flex; flex-direction: column; gap: 0.5rem; position: relative; overflow: hidden; }
+.card .stripe { position: absolute; top: 0; left: 0; right: 0; height: 4px; }
+.card .big-num { font-size: 2.4rem; font-weight: 800; line-height: 1; color: var(--text);
+                 letter-spacing: -0.04em; margin-bottom: 0.2rem; }
+
+/* Bg accents */
+.bg-blue { background: var(--blue); } .bg-green { background: var(--green); }
+.bg-orange { background: var(--orange); } .bg-purple { background: var(--purple); }
+.bg-red { background: var(--red); } .bg-teal { background: var(--teal); }
+.blue { color: var(--blue); } .green { color: var(--green); }
+.orange { color: var(--orange); } .purple { color: var(--purple); }
+.red { color: var(--red); } .teal { color: var(--teal); }
+
+/* Callouts */
+.callout { display: flex; align-items: stretch; gap: 1rem; padding: 1rem 1.2rem;
+           background: #0f0f13; border-radius: 12px; }
+.callout .bar { width: 4px; border-radius: 2px; flex-shrink: 0; }
+.callout strong { font-weight: 700; }
+
+/* Role tag */
+.role-tag { display: inline-block; padding: 0.2rem 0.7rem; border-radius: 999px;
+            font-size: 0.85rem; font-weight: 600; letter-spacing: 0.02em;
+            background: rgba(255,255,255,0.06); margin-bottom: 0.6rem; }
+.role-tag.blue { color: var(--blue); border: 1px solid rgba(10,132,255,0.35); }
+.role-tag.purple { color: var(--purple); border: 1px solid rgba(191,90,242,0.35); }
+.role-tag.orange { color: var(--orange); border: 1px solid rgba(255,159,10,0.35); }
+
+/* Prompt / code blocks */
+.prompt, .mono-block {
+  font-family: 'JetBrains Mono', 'SF Mono', Menlo, monospace;
+  background: #0a0a0d; border: 1px solid var(--line); border-radius: 10px;
+  padding: 0.9rem 1rem; font-size: 0.9rem; line-height: 1.5;
+  color: var(--light); white-space: pre-wrap;
+}
+.prompt em { color: var(--text); font-style: normal; font-weight: 700; }
+
+/* Cover */
+.cover-grid { display: grid; height: 100%; grid-template-rows: 1fr auto auto auto;
+              gap: 1.4rem; padding: 5rem 6rem 4rem; align-content: end; }
+.cover-meta { display: flex; align-items: center; gap: 0.6rem; }
+.cover-meta .label { letter-spacing: 0.18em; text-transform: uppercase;
+                     font-weight: 600; font-size: 0.85rem; color: var(--light); }
+.dot { width: 10px; height: 10px; border-radius: 50%; background: var(--blue); }
+.cover-title { font-size: 5rem; font-weight: 800; line-height: 1.02; letter-spacing: -0.035em; }
+.cover-quote { font-size: 1.35rem; color: var(--light); max-width: 50rem;
+               border-left: 3px solid var(--blue); padding-left: 1rem; }
+.cover-quote .quote-mark { color: var(--blue); font-size: 1.6rem; margin-right: 0.2rem; }
+.cover-foot { display: flex; gap: 2.5rem; color: var(--text); font-size: 0.95rem;
+              padding-top: 1rem; border-top: 1px solid var(--line); }
+.cover-footer { position: absolute; right: 4.5rem; bottom: 2rem; color: var(--dim); }
+
+/* Default body fallback */
+.raw-body { display: flex; flex-direction: column; gap: 0.35rem; max-width: 70rem; }
+.raw-body .section-head { margin-top: 0.8rem; color: var(--light);
+                          font-size: 1.05rem; letter-spacing: 0.02em; }
+.raw-body .num-row { display: flex; align-items: baseline; gap: 0.6rem; margin-top: 0.6rem; }
+.raw-body .num-tag { font-size: 1.4rem; font-weight: 800; color: var(--blue);
+                     min-width: 2rem; }
+.raw-body .num-text { font-size: 1.1rem; font-weight: 600; }
+.raw-body .bullet { font-size: 1.05rem; }
+.raw-body .arrow { font-size: 0.95rem; color: var(--dim); padding-left: 1rem; font-style: italic; }
+.raw-body blockquote { font-size: 1.15rem; font-style: italic; color: var(--light);
+                       border-left: 3px solid var(--blue); padding-left: 0.9rem; margin: 0.4rem 0; }
+.raw-body .line { color: var(--text); }
+.raw-body .indent { padding-left: 1.2rem; color: var(--light); }
+.raw-body .gap { height: 0.45rem; }
+.raw-body .mono-block { white-space: pre; font-size: 0.85rem; }
+
+/* Three-questions list (slide 5) */
+.q-list { display: flex; flex-direction: column; gap: 0.9rem; justify-content: center; }
+.q-row { display: flex; align-items: center; gap: 1.6rem; padding: 1.1rem 1.4rem;
+         background: var(--bg-card); border-radius: 14px; border-left: 4px solid transparent; }
+.q-row:nth-child(1) { border-left-color: var(--blue); }
+.q-row:nth-child(2) { border-left-color: var(--purple); }
+.q-row:nth-child(3) { border-left-color: var(--green); }
+.q-num { font-size: 2.3rem; font-weight: 800; line-height: 1; letter-spacing: -0.04em;
+         min-width: 3rem; font-variant-numeric: tabular-nums; }
+.q-body h3 { font-size: 1.4rem; margin-bottom: 0.25rem; }
+.q-body h3 em { color: var(--orange); font-style: normal; }
+.q-body p { font-size: 1.02rem; }
+
+/* Ideation split (slide 6) */
+.left-col, .right-col { display: flex; flex-direction: column; }
+.checklist { list-style: none; display: flex; flex-direction: column; gap: 0.55rem;
+             margin-top: 1.1rem; }
+.checklist li { display: flex; gap: 0.7rem; align-items: baseline; font-size: 1.08rem; }
+.checklist .check { font-weight: 800; flex-shrink: 0; width: 1rem; text-align: center; }
+.prompt-card { background: var(--bg-card); border-radius: 14px; overflow: hidden;
+               box-shadow: 0 12px 30px rgba(0,0,0,0.45); }
+.prompt-head { display: flex; align-items: center; gap: 0.4rem; padding: 0.6rem 0.9rem;
+               background: #1a1a20; border-bottom: 1px solid var(--line); font-size: 0.8rem; }
+.prompt-head .dot { width: 11px; height: 11px; border-radius: 50%; }
+.dot-red { background: var(--red); }
+.prompt-head .prompt-title { color: var(--dim); margin-left: 0.6rem;
+                             font-family: 'JetBrains Mono', monospace; }
+.prompt.big { font-size: 1rem; padding: 1.1rem 1.2rem; border: none; border-radius: 0;
+              background: transparent; }
+
+/* Seven elements (slide 7) */
+.elem-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.7rem 1.4rem; align-content: center; }
+.elem-row { display: flex; align-items: baseline; gap: 0.9rem;
+            padding: 0.7rem 0.9rem; border-radius: 10px; background: rgba(255,255,255,0.025); }
+.elem-row.is-key { background: rgba(48,209,88,0.08); border: 1px solid rgba(48,209,88,0.25); }
+.elem-num { font-size: 1.2rem; font-weight: 800; color: var(--blue);
+            min-width: 2.2rem; font-variant-numeric: tabular-nums; }
+.elem-row.is-key .elem-num { color: var(--green); }
+.elem-body h3 { font-size: 1.05rem; margin-bottom: 0.15rem; }
+.elem-body p { font-size: 0.92rem; }
+.key-tag { display: inline-block; font-size: 0.7rem; padding: 0.1rem 0.5rem;
+           border-radius: 999px; background: rgba(48,209,88,0.15); color: var(--green);
+           font-weight: 700; letter-spacing: 0.04em; margin-left: 0.4rem; vertical-align: middle; }
+.meta-row { display: flex; gap: 0.6rem; flex-wrap: wrap; }
+.meta-pill { padding: 0.45rem 0.9rem; border-radius: 999px;
+             background: rgba(255,255,255,0.05); border: 1px solid var(--line);
+             font-size: 0.85rem; color: var(--light); }
+.meta-pill strong { color: var(--text); margin-right: 0.3rem; }
+
+/* Critique loop (slide 8) */
+.loop { display: flex; flex-direction: column; gap: 1rem; align-items: stretch; }
+.loop-start { text-align: center; }
+.loop-pill { display: inline-block; padding: 0.5rem 1.4rem; border-radius: 999px;
+             background: rgba(10,132,255,0.15); border: 1px solid rgba(10,132,255,0.4);
+             color: var(--blue); font-weight: 700; font-size: 0.95rem; }
+.loop-rounds { display: grid; grid-template-columns: 1fr auto 1fr auto 1fr; gap: 0.6rem;
+               align-items: stretch; }
+.round-card { background: var(--bg-card); border-radius: 14px; padding: 1.1rem 1.2rem;
+              display: flex; flex-direction: column; gap: 0.45rem; }
+.round-tag { display: inline-block; align-self: flex-start; padding: 0.15rem 0.6rem;
+             border-radius: 6px; font-size: 0.75rem; font-weight: 700;
+             letter-spacing: 0.05em; text-transform: uppercase; margin-bottom: 0.2rem; }
+.round-tag.blue   { background: rgba(10,132,255,0.18); color: var(--blue); }
+.round-tag.purple { background: rgba(191,90,242,0.18); color: var(--purple); }
+.round-tag.teal   { background: rgba(100,210,255,0.18); color: var(--teal); }
+.round-card h3 { font-size: 1.15rem; }
+.round-arrow { display: flex; align-items: center; color: var(--dim);
+               font-size: 0.78rem; font-style: italic; padding: 0 0.2rem; }
+
+/* Compare cards (slide 10) */
+.card.compare { display: flex; flex-direction: column; gap: 0.7rem; }
+.compare-head { display: flex; align-items: center; gap: 0.5rem; font-weight: 700;
+                font-size: 1.1rem; letter-spacing: -0.01em; }
+.compare-icon { width: 1.5rem; height: 1.5rem; border-radius: 50%; display: inline-flex;
+                align-items: center; justify-content: center; font-weight: 800; font-size: 0.95rem; }
+.compare-icon.red   { background: rgba(255,69,58,0.18); color: var(--red); }
+.compare-icon.green { background: rgba(48,209,88,0.18); color: var(--green); }
+.card.compare.bad   { border: 1px solid rgba(255,69,58,0.25); }
+.card.compare.good  { border: 1px solid rgba(48,209,88,0.30); }
+
+/* Three-tier boundaries (slide 11) */
+.card.tier { display: flex; flex-direction: column; gap: 0.55rem; }
+.tier-head { display: flex; align-items: center; gap: 0.55rem; font-size: 1.2rem;
+             font-weight: 700; letter-spacing: -0.01em; }
+.tier-icon { width: 1.6rem; height: 1.6rem; border-radius: 50%; display: inline-flex;
+             align-items: center; justify-content: center; font-weight: 800; }
+.tier-icon.green  { background: rgba(48,209,88,0.18); color: var(--green); }
+.tier-icon.orange { background: rgba(255,159,10,0.18); color: var(--orange); }
+.tier-icon.red    { background: rgba(255,69,58,0.18); color: var(--red); }
+.tier-sub { font-size: 0.95rem; }
+.tier-always { border-top: 3px solid var(--green); }
+.tier-ask    { border-top: 3px solid var(--orange); }
+.tier-never  { border-top: 3px solid var(--red); }
+.prompt.mini { font-size: 0.85rem; padding: 0.7rem 0.9rem; line-height: 1.45; }
+
+/* Model settings — temperature scale (slide 12) */
+.temp-scale { display: flex; align-items: center; gap: 0.7rem; margin-bottom: 0.6rem; }
+.temp-label { color: var(--dim); font-variant-numeric: tabular-nums; font-size: 0.85rem;
+              font-family: 'JetBrains Mono', monospace; }
+.temp-bar { flex: 1; display: grid; grid-template-columns: 1fr 1fr; height: 56px;
+            border-radius: 10px; overflow: hidden; border: 1px solid var(--line); }
+.temp-zone { display: flex; flex-direction: column; align-items: center; justify-content: center;
+             padding: 0.4rem; gap: 0.15rem; }
+.temp-zone-label { font-weight: 700; font-size: 0.95rem; }
+.temp-zone-range { font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; opacity: 0.85; }
+.temp-low  { background: linear-gradient(90deg, rgba(10,132,255,0.35), rgba(10,132,255,0.18)); color: var(--blue); }
+.temp-high { background: linear-gradient(90deg, rgba(191,90,242,0.18), rgba(255,69,58,0.32)); color: #ffd0c8; }
+.phase-card { gap: 0.5rem; }
+.phase-tag { display: inline-block; align-self: flex-start; padding: 0.18rem 0.65rem;
+             border-radius: 999px; font-size: 0.78rem; font-weight: 700;
+             letter-spacing: 0.04em; text-transform: uppercase; }
+.phase-tag.purple { background: rgba(191,90,242,0.18); color: var(--purple); }
+.phase-tag.blue   { background: rgba(10,132,255,0.18); color: var(--blue); }
+.setting-list { list-style: none; display: flex; flex-direction: column; gap: 0.25rem;
+                margin-top: 0.4rem; font-size: 0.95rem; }
+.setting-list strong { color: var(--text); margin-right: 0.4rem; min-width: 8.5rem;
+                       display: inline-block; }
+.setting-list li { color: var(--light); }
+.callout.news em { color: var(--text); font-style: italic; }
+
+/* Spec → planning flow (slide 13) */
+.flow { display: grid; grid-template-columns: 1fr auto 1fr auto 1.4fr auto 1fr;
+        gap: 0.8rem; align-items: stretch; }
+.flow-step { background: var(--bg-card); border-radius: 14px; padding: 1.2rem 1rem;
+             display: flex; flex-direction: column; align-items: center; gap: 0.4rem;
+             text-align: center; }
+.flow-step.flow-output { text-align: left; align-items: flex-start; }
+.flow-step.flow-cmd { background: #060608; border: 1px solid var(--line); }
+.flow-icon { font-size: 1.6rem; line-height: 1; }
+.flow-label { font-weight: 700; font-size: 1rem; }
+.flow-sub { font-size: 0.85rem; }
+.flow-sub code { background: rgba(255,255,255,0.07); padding: 0 0.3rem;
+                 border-radius: 4px; font-family: 'JetBrains Mono', monospace;
+                 font-size: 0.85em; color: var(--green); }
+.flow-arrow { display: flex; align-items: center; color: var(--dim); font-size: 1.5rem; }
+.prompt.cmd { font-size: 1.05rem; padding: 0.7rem 1rem; background: #000;
+              color: var(--green); border-color: #1a1a1f; }
+.output-list { list-style: none; display: flex; flex-direction: column; gap: 0.35rem;
+               margin-top: 0.2rem; font-size: 0.95rem; width: 100%; }
+.output-list .b { color: var(--green); margin-right: 0.5rem; font-weight: 800; }
+.callout.emphasis strong { color: var(--green); }
+
+/* Example timeline (slide 14) */
+.timeline { position: relative; display: flex; flex-direction: column; gap: 0.7rem;
+            padding-left: 0.4rem; }
+.timeline::before { content: ""; position: absolute; left: 1.7rem; top: 1.6rem; bottom: 1.6rem;
+                    width: 2px; background: repeating-linear-gradient(to bottom,
+                    var(--line) 0 6px, transparent 6px 12px); }
+.tl-row { display: flex; align-items: flex-start; gap: 1rem; position: relative; }
+.tl-marker { flex: 0 0 3.4rem; display: flex; justify-content: center; }
+.tl-num { width: 2.6rem; height: 2.6rem; border-radius: 50%; display: inline-flex;
+          align-items: center; justify-content: center; font-weight: 800; font-size: 1.15rem;
+          background: var(--bg); border: 2px solid currentColor; position: relative; z-index: 1; }
+.tl-num.blue   { color: var(--blue); }
+.tl-num.purple { color: var(--purple); }
+.tl-num.teal   { color: var(--teal); }
+.tl-num.green  { color: var(--green); }
+.tl-body { flex: 1; padding-top: 0.15rem; }
+.tl-body h3 { font-size: 1.2rem; margin-bottom: 0.25rem; }
+.tl-body p { font-size: 1rem; line-height: 1.55; }
+.tl-body code { background: rgba(255,255,255,0.06); padding: 0.05rem 0.4rem;
+                border-radius: 4px; font-family: 'JetBrains Mono', monospace; font-size: 0.85em; }
+.callout.contrast { display: grid; grid-template-columns: 1fr auto 1fr;
+                    align-items: center; padding: 0.9rem 1.4rem; gap: 1.2rem; }
+.contrast-cell { display: flex; flex-direction: column; align-items: center; gap: 0.1rem; }
+.contrast-time { font-size: 1.7rem; font-weight: 800; letter-spacing: -0.02em; }
+.contrast-cell.good .contrast-time { color: var(--green); }
+.contrast-cell.bad  .contrast-time { color: var(--red); }
+.contrast-label { font-size: 0.85rem; color: var(--dim); letter-spacing: 0.04em; }
+.contrast-vs { color: var(--dim); font-style: italic; font-size: 0.95rem; }
+
+/* Context building doc cards (slide 15) */
+.doc-card { background: var(--bg-card); border-radius: 14px; padding: 1.2rem 1.3rem;
+            display: flex; flex-direction: column; gap: 0.5rem; position: relative; overflow: hidden; }
+.doc-card::before { content: ""; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+                    background: linear-gradient(90deg, var(--blue), transparent); }
+.doc-card:nth-child(2)::before { background: linear-gradient(90deg, var(--purple), transparent); }
+.doc-card:nth-child(3)::before { background: linear-gradient(90deg, var(--green), transparent); }
+.doc-head { display: flex; align-items: center; gap: 0.55rem; padding-bottom: 0.6rem;
+            border-bottom: 1px solid var(--line); margin-bottom: 0.4rem; }
+.doc-icon { font-size: 1.2rem; }
+.doc-name { font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; color: var(--light); }
+.doc-card h3 { font-size: 1.2rem; }
+.doc-bullets { list-style: none; display: flex; flex-direction: column; gap: 0.3rem;
+               font-size: 0.95rem; color: var(--light); }
+.doc-bullets li { padding-left: 1rem; position: relative; }
+.doc-bullets li::before { content: "›"; position: absolute; left: 0; color: var(--dim); }
+.doc-bullets em { color: var(--text); font-style: normal; font-weight: 600; }
+
+/* Harness AGENTS.md mockup (slide 16) */
+.harness-list { list-style: none; display: flex; flex-direction: column; gap: 0.4rem;
+                margin-top: 1rem; font-size: 1.05rem; }
+.harness-list li { padding-left: 0.4rem; }
+.harness-list .b { display: inline-block; width: 1rem; font-weight: 800; }
+.harness-list .b.blue   { color: var(--blue); }
+.harness-list .b.green  { color: var(--green); }
+.harness-list .b.red    { color: var(--red); }
+.harness-list .b.orange { color: var(--orange); }
+.harness-list .b.purple { color: var(--purple); }
+.prompt.md { font-size: 0.92rem; line-height: 1.55; color: var(--light); }
+.md-h    { color: var(--blue); font-weight: 700; }
+.md-em   { color: var(--orange); font-weight: 600; }
+.md-warn { color: var(--red); font-weight: 700; text-transform: uppercase; font-size: 0.85em; }
+.callout.quote-cl { padding: 1rem 1.4rem; }
+.pullq { font-size: 1.15rem; line-height: 1.5; font-style: italic; color: var(--light);
+         border: none; padding: 0; margin: 0; }
+.pullq cite { display: block; margin-top: 0.5rem; font-style: normal; color: var(--dim);
+              font-size: 0.85rem; letter-spacing: 0.04em; }
+.pullq cite a { color: var(--blue); text-decoration: none;
+                border-bottom: 1px dotted rgba(10,132,255,0.45); }
+.pullq cite a:hover { border-bottom-color: var(--blue); }
+
+/* Iterative chat (slide 16.5) */
+.chat { display: flex; flex-direction: column; gap: 0.55rem; max-width: 60rem;
+        align-self: center; width: 100%; }
+.chat-bubble { padding: 0.7rem 1rem; border-radius: 14px; max-width: 78%;
+               display: flex; flex-direction: column; gap: 0.15rem; }
+.chat-bubble p { font-size: 1rem; line-height: 1.45; }
+.chat-who { font-size: 0.7rem; letter-spacing: 0.1em; text-transform: uppercase;
+            font-weight: 700; }
+.chat-bubble.user  { align-self: flex-end; background: rgba(10,132,255,0.16);
+                     border: 1px solid rgba(10,132,255,0.3); }
+.chat-bubble.user .chat-who  { color: var(--blue); }
+.chat-bubble.agent { align-self: flex-start; background: var(--bg-card);
+                     border: 1px solid var(--line); }
+.chat-bubble.agent .chat-who { color: var(--purple); }
+
+/* Red flags grid (slide 17) */
+.rf-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.8rem;
+           align-content: start; }
+.rf-card { display: flex; gap: 0.9rem; padding: 1rem 1.1rem;
+           background: var(--bg-card); border-radius: 12px;
+           border-left: 3px solid var(--red); }
+.rf-x { font-size: 1.3rem; color: var(--red); font-weight: 800; line-height: 1.4;
+        flex-shrink: 0; }
+.rf-body h3 { font-size: 1.02rem; margin-bottom: 0.2rem; line-height: 1.3; }
+.rf-body p { font-size: 0.92rem; line-height: 1.45; }
+
+/* Quick wins grid (slide 18) */
+.qw-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.55rem 1rem;
+           align-content: center; }
+.qw-row { display: flex; align-items: center; gap: 0.9rem;
+          padding: 0.7rem 0.95rem; background: var(--bg-card); border-radius: 10px; }
+.qw-num { font-size: 1.05rem; font-weight: 800; color: var(--green);
+          font-variant-numeric: tabular-nums; min-width: 2rem;
+          font-family: 'JetBrains Mono', monospace; }
+.qw-body { flex: 1; }
+.qw-body h3 { font-size: 1.02rem; margin-bottom: 0.15rem; }
+.qw-body code { background: rgba(255,255,255,0.07); padding: 0 0.35rem;
+                border-radius: 4px; font-family: 'JetBrains Mono', monospace; font-size: 0.85em; }
+.qw-body p { font-size: 0.9rem; }
+.qw-check { font-size: 1.1rem; font-weight: 800; flex-shrink: 0; }
+
+/* Recap + final message (slide 19) */
+.recap-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 0.6rem;
+              margin-bottom: 1.4rem; }
+.recap-pill { background: var(--bg-card); border-radius: 12px; padding: 0.8rem 0.9rem;
+              display: flex; flex-direction: column; gap: 0.45rem; min-height: 100%; }
+.recap-pill > div { font-size: 0.92rem; line-height: 1.35; }
+.recap-tag { display: inline-flex; align-items: center; justify-content: center;
+             width: 2rem; height: 2rem; border-radius: 8px; font-family: 'JetBrains Mono', monospace;
+             font-weight: 800; font-size: 0.85rem; }
+.recap-tag.blue   { background: rgba(10,132,255,0.18); color: var(--blue); }
+.recap-tag.purple { background: rgba(191,90,242,0.18); color: var(--purple); }
+.recap-tag.teal   { background: rgba(100,210,255,0.18); color: var(--teal); }
+.recap-tag.orange { background: rgba(255,159,10,0.18); color: var(--orange); }
+.recap-tag.green  { background: rgba(48,209,88,0.18); color: var(--green); }
+.final-message { flex: 1; display: flex; align-items: center; justify-content: center;
+                 background: linear-gradient(135deg, rgba(10,132,255,0.08), rgba(191,90,242,0.08));
+                 border-radius: 16px; padding: 2rem; border: 1px solid var(--line); }
+.final-quote { text-align: center; font-size: 1.45rem; line-height: 1.55; max-width: 50rem; }
+.final-quote em { color: var(--blue); font-style: normal; font-weight: 700; }
+.final-quote strong { display: inline-block; margin-top: 0.3rem; font-size: 1.7rem;
+                      background: linear-gradient(90deg, var(--blue), var(--purple));
+                      -webkit-background-clip: text; background-clip: text; color: transparent; }
+.big-quote { font-size: 2.5rem; line-height: 0; color: var(--blue); margin-right: 0.3rem;
+             vertical-align: -0.4rem; }
+
+/* Q&A + resources (slide 20) */
+.qa-slide { padding-top: 3rem; }
+.qa-layout { display: grid; grid-template-columns: 1.05fr 1.4fr; gap: 2rem;
+             align-items: stretch; }
+.qa-left { display: flex; flex-direction: column; justify-content: center; gap: 0.8rem; }
+.qa-headline { font-size: 5rem; font-weight: 800; line-height: 1; letter-spacing: -0.035em;
+               background: linear-gradient(135deg, var(--blue), var(--purple));
+               -webkit-background-clip: text; background-clip: text; color: transparent; }
+.qa-meta { display: flex; flex-direction: column; gap: 0.3rem; margin-top: 1rem;
+           font-size: 0.95rem; padding-top: 1rem; border-top: 1px solid var(--line); }
+.qa-right .kicker { color: var(--blue); font-weight: 600; font-size: 0.95rem;
+                    letter-spacing: 0.04em; margin-bottom: 0.7rem; }
+.res-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem; }
+.res-grid-3 { grid-template-columns: 1fr 1fr 1fr; gap: 0.5rem; }
+.res-card { background: var(--bg-card); border-radius: 12px; padding: 0.8rem 0.95rem;
+            display: flex; flex-direction: column; gap: 0.25rem;
+            border: 1px solid var(--line); min-height: 100%; }
+.res-source { font-size: 0.65rem; letter-spacing: 0.12em; text-transform: uppercase;
+              font-weight: 700; }
+.res-card h3 { font-size: 0.92rem; line-height: 1.25; }
+.res-card p { font-size: 0.78rem; line-height: 1.4; }
+a.res-url { font-family: 'JetBrains Mono', monospace; font-size: 0.7rem;
+            color: var(--blue); padding-top: 0.35rem; border-top: 1px dashed var(--line);
+            margin-top: auto; word-break: break-all; text-decoration: none;
+            transition: color 0.15s; display: block; }
+a.res-url:hover { color: var(--text); border-top-color: var(--blue); }
+
+/* Why fail (slide 2) */
+.card.vague { border: 1px solid rgba(255,69,58,0.30); display: flex; flex-direction: column; gap: 0.7rem; }
+.card.spec-driven { border: 1px solid rgba(48,209,88,0.30); display: flex; flex-direction: column; gap: 0.7rem; }
+.vague-tag { display: inline-block; align-self: flex-start; padding: 0.2rem 0.7rem;
+             border-radius: 999px; font-size: 0.78rem; font-weight: 700;
+             letter-spacing: 0.04em; text-transform: uppercase; }
+.vague-tag.red   { background: rgba(255,69,58,0.18); color: var(--red); }
+.vague-tag.green { background: rgba(48,209,88,0.18); color: var(--green); }
+.cascade { display: flex; flex-direction: column; gap: 0.3rem; padding-top: 0.4rem;
+           border-top: 1px solid var(--line); }
+.cascade-step { font-size: 0.98rem; }
+.cascade-step .ar { font-weight: 800; margin-right: 0.5rem; display: inline-block;
+                    width: 1rem; }
+.cascade-step .ar.red   { color: var(--red); }
+.cascade-step .ar.green { color: var(--green); }
+.callout.analogy strong { color: var(--orange); }
+
+/* Industry data stats (slide 3) */
+.stat-grid { display: grid; grid-template-columns: 1fr 1fr 1fr;
+             gap: 0.8rem; align-content: stretch; }
+.stat-card { background: var(--bg-card); border-radius: 14px; padding: 1.4rem 1.5rem;
+             display: flex; flex-direction: column; gap: 0.3rem; justify-content: center;
+             border-top: 3px solid var(--line); }
+.stat-card:nth-child(1) { border-top-color: var(--green); }
+.stat-card:nth-child(2) { border-top-color: var(--blue); }
+.stat-card:nth-child(3) { border-top-color: var(--orange); }
+.stat-num { font-size: 3.2rem; font-weight: 800; line-height: 1; letter-spacing: -0.04em;
+            font-variant-numeric: tabular-nums; }
+.stat-num.green  { color: var(--green); }
+.stat-num.blue   { color: var(--blue); }
+.stat-num.purple { color: var(--purple); }
+.stat-num.orange { color: var(--orange); }
+.stat-unit { font-size: 1.2rem; font-weight: 700; opacity: 0.75; margin-left: 0.15rem;
+             letter-spacing: 0; }
+.stat-label { font-size: 1.1rem; font-weight: 600; color: var(--text);
+              margin-top: 0.15rem; }
+.stat-source { margin-top: 0.35rem; line-height: 1.4; }
+.stat-source code { background: rgba(255,255,255,0.07); padding: 0 0.35rem;
+                    border-radius: 4px; font-family: 'JetBrains Mono', monospace; font-size: 0.85em; }
+
+/* Progress + nav HUD */
+.hud { position: fixed; left: 0; right: 0; bottom: 0; height: 2px;
+       background: linear-gradient(to right, var(--blue) var(--progress, 0%),
+                                    rgba(255,255,255,0.05) var(--progress, 0%));
+       transition: background 0.2s; pointer-events: none; }
+
+/* Notes overlay */
+.notes-pane {
+  position: fixed; inset: auto 0 0 0; height: 0; overflow: auto;
+  background: rgba(8,8,10,0.96); backdrop-filter: blur(14px);
+  border-top: 1px solid var(--line); transition: height 0.25s ease;
+  padding: 0 4.5rem;
+}
+.notes-pane.open { height: 45vh; padding: 1.6rem 4.5rem; }
+.notes-pane h4 { font-size: 0.85rem; letter-spacing: 0.16em; text-transform: uppercase;
+                 color: var(--blue); margin-bottom: 0.6rem; }
+.notes-pane .note { display: none; max-width: 60rem; }
+.notes-pane .note.active { display: block; }
+.notes-pane p { font-size: 0.95rem; color: var(--light); margin-bottom: 0.7rem; line-height: 1.55; }
+
+/* Help hint */
+.hint { position: fixed; right: 1rem; bottom: 0.75rem; color: var(--dim);
+        font-size: 0.7rem; letter-spacing: 0.04em; }
+.hint kbd { background: #1a1a1f; border: 1px solid var(--line); border-radius: 4px;
+            padding: 0.05rem 0.35rem; font-family: inherit; font-size: 0.7rem; }
+</style>
+</head>
+<body>
+  <main class="deck">
+
+<section class="slide cover" data-idx="1">
+  <div class="cover-grid">
+    <div class="cover-meta">
+      <span class="dot dot-blue"></span>
+      <span class="label">AI Builders @ Habi</span>
+    </div>
+    <h1 class="cover-title">
+      Git/GitHub para AI Builders<br>
+      <span class="dim">cómo colaborar en código sin volverse loco</span>
+    </h1>
+    <div class="cover-foot">
+      <div><span class="light">Speaker</span> · Martin Ramos Mejia</div>
+    </div>
+  </div>
+  <footer class="cover-footer">
+    <span class="page">01 / 16</span>
+  </footer>
+</section>
+
+
+<section class="slide " data-idx="2">  <header class="hdr">    <span class="eyebrow">Apertura</span>    <span class="page">02 / 16</span>  </header>
+  <div class="title-block"><div class="kicker">El hook</div><h1>El problema del email attachment</h1></div>
+  <p class="lede">¿Les pasó esto? <span class="dim">— levanten la mano</span></p>
+  <div class="cols-2 grow">
+    <div class="card vague">
+      <div class="vague-tag red">Sin Git</div>
+      <pre class="prompt big">📄 email_final.docx
+📄 email_final_v2.docx
+📄 email_final_v2_REAL.docx
+📄 email_final_v2_REAL_comentarios_maria.docx
+📄 email_final_ESTE_SI.docx
+📄 email_final_ESTE_SI_v2.docx</pre>
+      <div class="cascade">
+        <p class="cascade-step"><span class="ar red">→</span> ¿Cuál es la versión correcta?</p>
+        <p class="cascade-step"><span class="ar red">→</span> Nadie sabe.</p>
+        <p class="cascade-step"><span class="ar red">→</span> Hay que abrir cada uno y comparar.</p>
+      </div>
+    </div>
+    <div class="card spec-driven">
+      <div class="vague-tag green">Con Git</div>
+      <pre class="prompt big">📦 mi-proyecto/
+   ├─ AGENTS.md       ← versión actual
+   └─ historial:
+      • commit 4 · jueves
+      • commit 3 · miércoles
+      • commit 2 · martes
+      • commit 1 · lunes</pre>
+      <div class="cascade">
+        <p class="cascade-step"><span class="ar green">✓</span> Una sola fuente de verdad</p>
+        <p class="cascade-step"><span class="ar green">✓</span> Todo el historial accesible</p>
+        <p class="cascade-step"><span class="ar green">✓</span> Volver atrás cuando quieran</p>
+      </div>
+    </div>
+  </div>
+  <div class="callout mt-3">
+    <span class="bar bg-orange"></span>
+    <div>
+      <strong>Con documentos = molesto</strong>
+      <span class="light"> · 10 minutos perdidos. </span>
+      <strong>Con código + AI context = desastroso</strong>
+      <span class="light"> · perdés contexto, el agente arranca con info vieja, dos personas pisan trabajo del otro.</span>
+    </div>
+  </div>
+</section>
+
+
+<section class="slide " data-idx="3">  <header class="hdr">    <span class="eyebrow">Mental model</span>    <span class="page">03 / 16</span>  </header>
+  <div class="title-block"><div class="kicker">Mental model</div><h1>Git ≠ GitHub · time machine de su proyecto</h1></div>
+  <div class="cols-2">
+    <div class="card">
+      <div class="stripe bg-blue"></div>
+      <h3>Git</h3>
+      <p class="dim small">Sistema de control de versiones · local en su computadora</p>
+      <p class="small">Como “Track Changes” de Word, pero con esteroides. Registra cada cambio y les deja volver atrás.</p>
+    </div>
+    <div class="card">
+      <div class="stripe bg-purple"></div>
+      <h3>GitHub</h3>
+      <p class="dim small">Servicio en la nube · de Microsoft</p>
+      <p class="small">Como Google Drive, pero específico para proyectos de Git. Donde colaboran y guardan los archivos.</p>
+    </div>
+  </div>
+  <p class="lede mt-3">Y la mejor analogía para Git: <strong>el Netflix de su proyecto</strong>. Cada cambio importante = un episodio que ustedes graban.</p>
+  <div class="prompt-card grow">
+    <div class="prompt-head">
+      <span class="dot dot-red"></span>
+      <span class="dot" style="background:#ffbd2e;"></span>
+      <span class="dot" style="background:#28c840;"></span>
+      <span class="prompt-title">tu-proyecto · historia de commits</span>
+    </div>
+    <pre class="prompt big">🎬 Lunes       commit · “Agregué login”
+🎬 Martes      commit · “Arreglé bug en login”
+🎬 Miércoles   commit · “Agregué dashboard”
+🎬 Jueves      commit · “Nueva API de pagos”      ← están aquí</pre>
+  </div>
+  <div class="callout mt-3">
+    <span class="bar bg-blue"></span>
+    <div>
+      <strong>Con Git pueden:</strong>
+      <span class="light"> 📺 ver cualquier episodio anterior · ⏪ volver atrás si algo se rompió · 🔍 comparar línea por línea entre dos episodios.</span>
+    </div>
+  </div>
+</section>
+
+
+<section class="slide " data-idx="4">  <header class="hdr">    <span class="eyebrow">Conceptos básicos</span>    <span class="page">04 / 16</span>  </header>
+  <div class="title-block"><div class="kicker">Lo mínimo que necesitan · 80% de Git</div><h1>Repository + commit</h1></div>
+  <div class="cols-2 grow">
+    <div class="card">
+      <div class="stripe bg-blue"></div>
+      <div class="big-num">1</div>
+      <h3>Repository (repo)</h3>
+      <p class="dim small">La carpeta de su proyecto, con superpoderes</p>
+      <p class="small">Google Drive guarda solo la versión actual. Un repo guarda los archivos <strong>más todo el historial</strong> del proyecto entero.</p>
+      <pre class="prompt mini">mi-proyecto/        ← el repo
+├── AGENTS.md
+├── README.md
+└── ...</pre>
+      <p class="small dim">Es como Google Docs con “ver historial”, pero aplicado a la carpeta entera.</p>
+    </div>
+    <div class="card">
+      <div class="stripe bg-green"></div>
+      <div class="big-num">2</div>
+      <h3>Commit</h3>
+      <p class="dim small">Un cambio guardado, con descripción</p>
+      <p class="small">Como una <strong>foto del proyecto</strong> + lo que escriben en el reverso explicando qué cambió.</p>
+      <pre class="prompt mini">📸 Lun 10am  “Agregué login”
+📸 Lun 3pm   “Arreglé bug”
+📸 Mar 11am  “Nueva API”</pre>
+      <p class="small dim">En 2 semanas, leés la descripción y recordás por qué cambiaste eso.</p>
+    </div>
+  </div>
+  <div class="callout mt-3">
+    <span class="bar bg-orange"></span>
+    <div>
+      <strong>Si entienden estos dos, ya están.</strong>
+      <span class="light"> El resto de la charla es vocabulario y workflows. Repo y commit son el corazón.</span>
+    </div>
+  </div>
+</section>
+
+
+<section class="slide " data-idx="5">  <header class="hdr">    <span class="eyebrow">Conceptos básicos</span>    <span class="page">05 / 16</span>  </header>
+  <div class="title-block"><div class="kicker">No memorizar · solo reconocer</div><h1>Vocabulario rápido</h1></div>
+  <div class="q-list grow">
+    <div class="q-row" style="border-left-color: var(--blue);">
+      <span class="q-num blue" style="font-size: 2rem;">⬇️</span>
+      <div class="q-body">
+        <h3>Clone <span class="dim small" style="font-weight: 400;">— Copiar un repo desde GitHub a su computadora</span></h3>
+        <p class="dim">↪ como descargar una carpeta de Drive</p>
+      </div>
+    </div>
+    <div class="q-row" style="border-left-color: var(--purple);">
+      <span class="q-num purple" style="font-size: 2rem;">📥</span>
+      <div class="q-body">
+        <h3>Pull <span class="dim small" style="font-weight: 400;">— Traer cambios nuevos que hicieron otros</span></h3>
+        <p class="dim">↪ como hacer refresh en Gmail</p>
+      </div>
+    </div>
+    <div class="q-row" style="border-left-color: var(--green);">
+      <span class="q-num green" style="font-size: 2rem;">📤</span>
+      <div class="q-body">
+        <h3>Push <span class="dim small" style="font-weight: 400;">— Subir tus cambios a GitHub</span></h3>
+        <p class="dim">↪ como guardar en la nube de Drive</p>
+      </div>
+    </div>
+    <div class="q-row" style="border-left-color: var(--orange);">
+      <span class="q-num orange" style="font-size: 2rem;">🔀</span>
+      <div class="q-body">
+        <h3>Merge <span class="dim small" style="font-weight: 400;">— Unir cambios de dos ramas</span></h3>
+        <p class="dim">↪ como combinar dos documentos</p>
+      </div>
+    </div>
+    <div class="q-row" style="border-left-color: var(--red);">
+      <span class="q-num red" style="font-size: 2rem;">⚠️</span>
+      <div class="q-body">
+        <h3>Conflict <span class="dim small" style="font-weight: 400;">— Dos personas editaron exactamente lo mismo</span></h3>
+        <p class="dim">↪ como un conflicto de edición en Docs</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<section class="slide " data-idx="6">  <header class="hdr">    <span class="eyebrow">Workflow humano</span>    <span class="page">06 / 16</span>  </header>
+  <div class="title-block"><div class="kicker">El 80% del uso · cuatro pasos</div><h1>Pull → edit → commit → push</h1></div>
+  <div class="grow" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem;">
+    <div class="card">
+      <div class="stripe bg-blue"></div>
+      <div class="big-num">1</div>
+      <h3>📥 Pull</h3>
+      <p class="dim small">Traer últimos cambios</p>
+      <pre class="prompt mini"><span style="color:var(--green);font-weight:700;">$</span> git pull</pre>
+      <p class="small dim" style="margin-top: 0.4rem;">GitHub Desktop:</p>
+      <p class="small">Click "Fetch origin" → "Pull origin"</p>
+      <p class="small dim" style="margin-top: auto; padding-top: 0.6rem;">↪ como refresh en Gmail</p>
+    </div>
+    <div class="card">
+      <div class="stripe bg-purple"></div>
+      <div class="big-num">2</div>
+      <h3>✏️ Edit</h3>
+      <p class="dim small">Editar archivos</p>
+      <pre class="prompt mini"><span style="color:var(--dim);">(su editor habitual)</span></pre>
+      <p class="small dim" style="margin-top: 0.4rem;">GitHub Desktop:</p>
+      <p class="small">Editan como siempre</p>
+      <p class="small dim" style="margin-top: auto; padding-top: 0.6rem;">↪ como editar un Google Doc</p>
+    </div>
+    <div class="card">
+      <div class="stripe bg-green"></div>
+      <div class="big-num">3</div>
+      <h3>💾 Commit</h3>
+      <p class="dim small">Guardar con descripción</p>
+      <pre class="prompt mini"><span style="color:var(--green);font-weight:700;">$</span> git add archivo
+<span style="color:var(--green);font-weight:700;">$</span> git commit -m "…"</pre>
+      <p class="small dim" style="margin-top: 0.4rem;">GitHub Desktop:</p>
+      <p class="small">Check ✓ archivos → Summary → Commit</p>
+      <p class="small dim" style="margin-top: auto; padding-top: 0.6rem;">↪ como guardar versión + nota</p>
+    </div>
+    <div class="card">
+      <div class="stripe bg-orange"></div>
+      <div class="big-num">4</div>
+      <h3>📤 Push</h3>
+      <p class="dim small">Subir a GitHub</p>
+      <pre class="prompt mini"><span style="color:var(--green);font-weight:700;">$</span> git push</pre>
+      <p class="small dim" style="margin-top: 0.4rem;">GitHub Desktop:</p>
+      <p class="small">Click "Push origin"</p>
+      <p class="small dim" style="margin-top: auto; padding-top: 0.6rem;">↪ como guardar en la nube</p>
+    </div>
+  </div>
+  <div class="callout mt-3">
+    <span class="bar bg-blue"></span>
+    <div>
+      <strong>Esto es TODO.</strong>
+      <span class="light"> Lo van a repetir miles de veces. Si los comandos los intimidan, <strong>GitHub Desktop hace exactamente lo mismo</strong>, visual y con clicks. Sin culpa.</span>
+    </div>
+  </div>
+</section>
+
+
+<section class="slide " data-idx="7">  <header class="hdr">    <span class="eyebrow">Tu agente con Git</span>    <span class="page">07 / 16</span>  </header>
+  <div class="title-block"><div class="kicker">Sección 50/50 · ahora el lado del agente</div><h1>Tu agente necesita git + gh CLI</h1></div>
+  <div class="cols-2 grow">
+    <div class="card">
+      <div class="stripe bg-purple"></div>
+      <h3>¿Por qué los necesita?</h3>
+      <p class="small">Claude Code, Cursor, Codex ejecutan los <strong>mismos comandos que ustedes</strong> para tocar el repo:</p>
+      <ul class="checklist">
+        <li><span class="check green">✓</span> <code>git commit</code> · guardar cambios</li>
+        <li><span class="check green">✓</span> <code>git push</code> · subirlos</li>
+        <li><span class="check green">✓</span> <code>gh pr create</code> · abrir PRs</li>
+      </ul>
+      <p class="small dim" style="margin-top: 0.5rem;">Sin git/gh, el agente edita archivos pero no puede guardar nada en el historial.</p>
+    </div>
+    <div class="card">
+      <div class="stripe bg-green"></div>
+      <h3>Qué instalar (1 sola vez)</h3>
+      <pre class="prompt mini"><span style="color:var(--green);font-weight:700;">$</span> brew install git gh                  <span style="color:var(--dim);"># macOS</span>
+<span style="color:var(--green);font-weight:700;">$</span> winget install Git.Git GitHub.cli    <span style="color:var(--dim);"># Windows</span>
+<span style="color:var(--green);font-weight:700;">$</span> apt-get install git                  <span style="color:var(--dim);"># Linux</span>
+
+<span style="color:var(--green);font-weight:700;">$</span> gh auth login                        <span style="color:var(--dim);"># autenticar</span></pre>
+      <p class="small dim" style="margin-top: 0.4rem;">Una sola vez. Después su agente lo usa solo. <strong style="color:var(--text);">$</strong> = comando que corren en la terminal.</p>
+    </div>
+  </div>
+  <div class="callout mt-3">
+    <span class="bar bg-orange"></span>
+    <div>
+      <strong>GitHub Desktop no aplica para agentes</strong>
+      <span class="light"> — es solo para humanos. Aunque ustedes lo usen, igual tienen que instalar git + gh para que su agente funcione.</span>
+    </div>
+  </div>
+</section>
+
+
+<section class="slide " data-idx="8">  <header class="hdr">    <span class="eyebrow">Tu agente con Git</span>    <span class="page">08 / 16</span>  </header>
+  <div class="title-block"><div class="kicker">El junior eficiente · usa los mismos comandos que ustedes</div><h1>Cómo trabaja su agente</h1></div>
+  <div class="grow" style="display: grid; grid-template-columns: 1fr 1.6fr; gap: 1.2rem;">
+    <div class="card">
+      <div class="stripe bg-blue"></div>
+      <div class="vague-tag" style="background:rgba(10,132,255,0.18); color:var(--blue);">Vos</div>
+      <pre class="prompt big" style="font-size:1.05rem;">“Agregá la API
+de pagos al
+AGENTS.md”</pre>
+      <p class="small dim" style="margin-top:0.6rem;">Una sola frase. Eso es todo lo que tienen que escribir.</p>
+    </div>
+    <div class="card">
+      <div class="stripe bg-purple"></div>
+      <div class="vague-tag" style="background:rgba(191,90,242,0.18); color:var(--purple);">Tu agente</div>
+      <pre class="prompt big" style="font-size:0.98rem; line-height:1.7;">1. <span style="color:var(--light);">Lee</span> AGENTS.md actual
+2. <span style="color:var(--light);">Edita</span> el archivo (agrega sección pagos)
+3. <span style="color:var(--green);font-weight:700;">$</span> git add AGENTS.md
+4. <span style="color:var(--green);font-weight:700;">$</span> git commit -m "Add payments API"
+5. <span style="color:var(--green);font-weight:700;">$</span> git push
+6. <span style="color:var(--light);">Te muestra el diff</span> por si quieren revisar</pre>
+      <div class="contrast-cell good" style="flex-direction:row; gap:0.5rem; align-items:baseline; margin-top:0.6rem;">
+        <span class="contrast-time">⏱ 20s</span>
+        <span class="contrast-label">vs ~5 min haciéndolo a mano</span>
+      </div>
+    </div>
+  </div>
+  <div class="callout mt-3">
+    <span class="bar bg-orange"></span>
+    <div>
+      <strong>No es magia.</strong>
+      <span class="light"> Su agente está corriendo los <strong>mismos comandos</strong> del slide anterior. Si entienden el workflow humano, entienden lo que hace su agente — no es una caja negra.</span>
+    </div>
+  </div>
+</section>
+
+
+<section class="slide " data-idx="9">  <header class="hdr">    <span class="eyebrow">Tu agente con Git</span>    <span class="page">09 / 16</span>  </header>
+  <div class="title-block"><div class="kicker">El agente propone · ustedes deciden</div><h1>Ustedes son el code reviewer</h1></div>
+  <p class="lede">Aunque el agente puede hacer todo solo, ustedes mandan en cada paso. Tres mecanismos de control:</p>
+  <div class="cols-3 grow">
+    <div class="card">
+      <div class="stripe bg-blue"></div>
+      <div class="big-num">1</div>
+      <h3>Aprobás cada acción</h3>
+      <p class="dim small">Antes de commit / push / abrir PR</p>
+      <p class="small">El agente pide tu OK <strong>antes</strong> de ejecutar.</p>
+      <ul class="checklist" style="margin-top:0.4rem;">
+        <li><span class="check green">✅</span> Aprobar este caso</li>
+        <li><span class="check green">✅</span> Auto-approve (cuando confíes)</li>
+        <li><span class="check" style="color:var(--red);">❌</span> Rechazar y darle feedback</li>
+      </ul>
+    </div>
+    <div class="card">
+      <div class="stripe bg-green"></div>
+      <div class="big-num">2</div>
+      <h3>Revisás el diff</h3>
+      <p class="dim small">Antes de que pushee a GitHub</p>
+      <pre class="prompt mini"><span style="color:var(--green);font-weight:700;">+ payments API: api.habi.co/pay</span>
+<span style="color:var(--green);font-weight:700;">+ auth: bearer token</span>
+<span style="color:var(--red);font-weight:700;">- old endpoint: /v1/old</span></pre>
+      <p class="small dim" style="margin-top:0.4rem;">Verde = agregado · Rojo = sacado. Si algo no les cierra, el agente corrige.</p>
+    </div>
+    <div class="card">
+      <div class="stripe bg-orange"></div>
+      <div class="big-num">3</div>
+      <h3>Pedís PR · cambios grandes</h3>
+      <p class="dim small">En vez de push directo a main</p>
+      <p class="small">Para cambios grandes o que requieren revisión de otra persona, le pedís al agente abrir un Pull Request.</p>
+      <pre class="prompt mini">“Abrime un PR
+  con estos cambios”</pre>
+      <p class="small dim" style="margin-top:0.4rem;">Mecanismo de revisión formal — lo vemos en el próximo slide.</p>
+    </div>
+  </div>
+  <div class="callout mt-3">
+    <span class="bar bg-blue"></span>
+    <div>
+      <strong>Mental model: junior eficiente + senior que aprueba.</strong>
+      <span class="light"> El agente teclea 100× más rápido que ustedes, pero el criterio — qué entra y qué no — es de ustedes. <strong>No activen auto-approve el día uno.</strong> La confianza se construye.</span>
+    </div>
+  </div>
+</section>
+
+
+<section class="slide " data-idx="10">  <header class="hdr">    <span class="eyebrow">Branches &amp; PRs</span>    <span class="page">10 / 16</span>  </header>
+  <div class="title-block"><div class="kicker">Cuando quieren experimentar o pedir review</div><h1>Branches y Pull Requests</h1></div>
+  <pre class="prompt big" style="font-size:1rem; line-height:1.55;"><span style="color:var(--blue);font-weight:700;">main</span>     ●────●────●────────────●────●───→
+                  <span style="color:var(--dim);">╲</span>            <span style="color:var(--green);">╱</span>
+                   <span style="color:var(--purple);">●────●────●</span>    <span style="color:var(--green);font-weight:700;">↑ PR + merge</span>
+                   <span style="color:var(--purple);">feature-pagos</span>
+                   <span style="color:var(--dim);">(3 commits experimentales · main intacto mientras tanto)</span></pre>
+  <div class="cols-2" style="margin-top:1rem;">
+    <div class="card">
+      <div class="stripe bg-purple"></div>
+      <h3>Branch</h3>
+      <p class="dim small">Línea de tiempo paralela · borrador antes del final</p>
+      <p class="small"><strong>Cuándo usar:</strong></p>
+      <ul class="checklist" style="margin-top:0.2rem;">
+        <li><span class="check green">✓</span> Experimentos que pueden no funcionar</li>
+        <li><span class="check green">✓</span> Cambios grandes que tardan días</li>
+        <li><span class="check green">✓</span> Trabajo que requiere revisión</li>
+      </ul>
+    </div>
+    <div class="card">
+      <div class="stripe bg-green"></div>
+      <h3>Pull Request (PR)</h3>
+      <p class="dim small">"Revisá mis cambios antes del merge"</p>
+      <p class="small"><strong>Cómo abrirlo (3 formas):</strong></p>
+      <pre class="prompt mini" style="margin-top:0.2rem;"><span style="color:var(--green);font-weight:700;">$</span> gh pr create                    <span style="color:var(--dim);"># terminal</span>
+   GitHub Desktop → Create PR    <span style="color:var(--dim);"># visual</span>
+   "Abrime un PR" al agente      <span style="color:var(--dim);"># 50/50</span></pre>
+      <p class="small dim" style="margin-top:0.4rem;">Como pedir feedback en Google Docs, pero con botón "Aprobar".</p>
+    </div>
+  </div>
+  <div class="callout mt-3">
+    <span class="bar bg-orange"></span>
+    <div>
+      <strong>¿Tengo que usarlos siempre? No.</strong>
+      <span class="light"> Para empezar, commits directos a main están bien para la mayoría de los cambios. Branches y PRs son herramientas <strong>opcionales</strong> que tienen cuando las necesitan.</span>
+    </div>
+  </div>
+</section>
+
+
+<section class="slide " data-idx="11">  <header class="hdr">    <span class="eyebrow">Branches &amp; PRs</span>    <span class="page">11 / 16</span>  </header>
+  <div class="title-block"><div class="kicker">Branches cortas · PRs rápidos · main siempre integrada</div><h1>Trunk-based development</h1></div>
+  <p class="lede">Cambios chicos van a main <strong>a través de un PR</strong>. La clave: branches que duran <strong>horas, no semanas</strong>. Nada de mega-merges al final.</p>
+  <pre class="prompt big grow" style="font-size:0.96rem; line-height:1.7;"><span style="color:var(--blue);">Lun 10am</span>  <span style="color:var(--purple);font-weight:700;">María</span>  <span style="color:var(--green);font-weight:700;">$</span> git checkout -b api-pagos     <span style="color:var(--dim);"># branch corta</span>
+<span style="color:var(--blue);">Lun 11am</span>  <span style="color:var(--purple);font-weight:700;">María</span>  <span style="color:var(--green);font-weight:700;">$</span> git commit -m "API de pagos"
+<span style="color:var(--blue);">Lun 12pm</span>  <span style="color:var(--purple);font-weight:700;">María</span>  <span style="color:var(--green);font-weight:700;">$</span> gh pr create  →  review  →  <span style="color:var(--green);">merge a main ✓</span>
+
+<span style="color:var(--blue);">Lun 2pm</span>   <span style="color:var(--orange);font-weight:700;">Juan</span>   <span style="color:var(--green);font-weight:700;">$</span> git pull                      <span style="color:var(--dim);"># trae cambios de María</span>
+<span style="color:var(--blue);">Lun 2pm</span>   <span style="color:var(--orange);font-weight:700;">Juan</span>   <span style="color:var(--green);font-weight:700;">$</span> git checkout -b tech-stack
+<span style="color:var(--blue);">Lun 4pm</span>   <span style="color:var(--orange);font-weight:700;">Juan</span>   <span style="color:var(--green);font-weight:700;">$</span> gh pr create  →  review  →  <span style="color:var(--green);">merge a main ✓</span>
+
+<span style="color:var(--dim);">Cada cambio: branch corta → commit → PR → merge. Repetir muchas veces al día.</span></pre>
+  <div class="cols-2" style="margin-top:0.8rem;">
+    <div class="callout">
+      <span class="bar bg-green"></span>
+      <div>
+        <strong>✅ Trunk-based</strong>
+        <span class="light"> · branches de horas, PRs chicos, merges frecuentes. Main siempre verde y al día.</span>
+      </div>
+    </div>
+    <div class="callout">
+      <span class="bar bg-red"></span>
+      <div>
+        <strong>❌ Anti-patrón</strong>
+        <span class="light"> · branches de semanas, mega-PR de 50 archivos, merges dolorosos con conflicts.</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<section class="slide " data-idx="12">  <header class="hdr">    <span class="eyebrow">Conflicts</span>    <span class="page">12 / 16</span>  </header>
+  <div class="title-block"><div class="kicker">Suena peor de lo que es · se resuelven en 30 segundos</div><h1>Conflicts: suena peor de lo que es</h1></div>
+  <p class="lede">Cuando <strong>dos personas editaron la misma línea</strong> al mismo tiempo. Como dos personas hablando a la vez en una llamada — Git no puede adivinar a cuál escuchar, así que les pregunta.</p>
+  <pre class="prompt big" style="font-size:1rem; line-height:1.6;"><span style="color:var(--dim);"># cómo se ve el archivo cuando hay conflict:</span>
+
+<span style="color:var(--red);font-weight:700;">&lt;&lt;&lt;&lt;&lt;&lt;&lt; Tu versión</span>
+proyecto: sistema de pagos
+<span style="color:var(--red);font-weight:700;">=======</span>
+proyecto: módulo de facturación
+<span style="color:var(--red);font-weight:700;">&gt;&gt;&gt;&gt;&gt;&gt;&gt; Versión de Juan</span></pre>
+  <div class="cols-2" style="margin-top:0.8rem;">
+    <div class="card">
+      <div class="stripe bg-blue"></div>
+      <h3>Opción 1 · Visual (fácil)</h3>
+      <p class="dim small">GitHub Desktop + VS Code</p>
+      <ul class="checklist" style="margin-top:0.3rem;">
+        <li><span class="check green">✓</span> GitHub Desktop detecta el conflict</li>
+        <li><span class="check green">✓</span> Click "Open in VS Code"</li>
+        <li><span class="check green">✓</span> Botones: Accept Current / Incoming / Both</li>
+        <li><span class="check green">✓</span> Save → commit, listo</li>
+      </ul>
+    </div>
+    <div class="card">
+      <div class="stripe bg-purple"></div>
+      <h3>Opción 2 · Manual (terminal)</h3>
+      <p class="dim small">Si te gusta la línea de comandos</p>
+      <ul class="checklist" style="margin-top:0.3rem;">
+        <li><span class="check green">✓</span> Abrís el archivo, decidís qué queda</li>
+        <li><span class="check green">✓</span> Borran las líneas con <code>&lt;&lt;&lt;&lt;</code> / <code>====</code> / <code>&gt;&gt;&gt;&gt;</code></li>
+        <li><span class="check green">✓</span> <code style="color:var(--green);">$</code> git add archivo</li>
+        <li><span class="check green">✓</span> <code style="color:var(--green);">$</code> git commit</li>
+      </ul>
+    </div>
+  </div>
+  <div class="callout mt-3">
+    <span class="bar bg-green"></span>
+    <div>
+      <strong>Tranquilos.</strong>
+      <span class="light"> Conflicts pasan rara vez (1/mes si eso) · Git <strong>avisa</strong> antes de pisar el trabajo de alguien · <strong>no pueden romper nada permanentemente</strong> · si se atascan, <strong>pregúntenle a su agente</strong> que abra el archivo y los ayude a resolver.</span>
+    </div>
+  </div>
+</section>
+
+
+<section class="slide " data-idx="13">  <header class="hdr">    <span class="eyebrow">GitHub web</span>    <span class="page">13 / 16</span>  </header>
+  <div class="title-block"><div class="kicker">Lo que vas a ver al entrar a GitHub.com</div><h1>Tour rápido por GitHub.com</h1></div>
+  <div class="cols-2 grow">
+    <div class="prompt-card">
+      <div class="prompt-head">
+        <span class="dot dot-red"></span>
+        <span class="dot" style="background:#ffbd2e;"></span>
+        <span class="dot" style="background:#28c840;"></span>
+        <span class="prompt-title">github.com · vista del repo</span>
+      </div>
+      <pre class="prompt big" style="font-size:0.96rem; line-height:1.55;"><span style="color:var(--blue);font-weight:700;">habi / mi-proyecto</span>
+─────────────────────────────────
+ <span style="color:var(--text);font-weight:700;">[ Code ]</span>  Pull Requests  Actions
+─────────────────────────────────
+ 📁 .github/
+ 📁 .harness/
+ 📄 AGENTS.md
+ 📄 README.md
+
+ <span style="color:var(--dim);">Latest commit · "Actualicé context"
+ by @maria · 2 hours ago</span></pre>
+    </div>
+    <div class="prompt-card">
+      <div class="prompt-head">
+        <span class="dot dot-red"></span>
+        <span class="dot" style="background:#ffbd2e;"></span>
+        <span class="dot" style="background:#28c840;"></span>
+        <span class="prompt-title">github.com · pull request</span>
+      </div>
+      <pre class="prompt big" style="font-size:0.96rem; line-height:1.55;"><span style="color:var(--purple);font-weight:700;">Update project context · #42</span>
+<span style="color:var(--dim);">by @maria · open</span>
+─────────────────────────────────
+ Files changed: <span style="color:var(--text);font-weight:700;">2</span>
+
+ <span style="color:var(--green);font-weight:700;">+ API de pagos: api.habi.co/pay</span>
+ <span style="color:var(--green);font-weight:700;">+ auth: bearer token</span>
+ <span style="color:var(--red);font-weight:700;">- old endpoint: /v1/old</span>
+─────────────────────────────────
+ <span style="color:var(--green);font-weight:700;">[ Approve ]</span>  Request changes  Comment</pre>
+    </div>
+  </div>
+  <div class="callout mt-3">
+    <span class="bar bg-blue"></span>
+    <div>
+      <strong>3 tabs principales:</strong>
+      <span class="light"> <strong>Code</strong> · ver archivos e historia · <strong>Pull Requests</strong> · revisar cambios antes del merge · <strong>Actions</strong> · ver automatizaciones (tests, validaciones, deploys).</span>
+    </div>
+  </div>
+</section>
+
+
+<section class="slide " data-idx="14">  <header class="hdr">    <span class="eyebrow">Reglas de oro</span>    <span class="page">14 / 16</span>  </header>
+  <div class="title-block"><div class="kicker">Lo que evita el 80% del sufrimiento</div><h1>Reglas de oro + errores comunes</h1></div>
+  <div class="cols-2 grow">
+    <div>
+      <h3 style="margin-bottom: 0.5rem;">5 reglas de oro</h3>
+      <div class="q-list" style="gap: 0.5rem;">
+      <div class="q-row" style="border-left-color: var(--blue); padding: 0.7rem 1rem;">
+        <span class="q-num blue" style="font-size: 1.6rem;">1</span>
+        <div class="q-body">
+          <h3 style="font-size: 1.05rem;">Pull antes de editar</h3>
+          <p class="dim small">Empezás cada sesión con git pull · evita conflicts</p>
+        </div>
+      </div>
+      <div class="q-row" style="border-left-color: var(--purple); padding: 0.7rem 1rem;">
+        <span class="q-num purple" style="font-size: 1.6rem;">2</span>
+        <div class="q-body">
+          <h3 style="font-size: 1.05rem;">Commits chicos y frecuentes</h3>
+          <p class="dim small">No esperes 2 semanas para un mega-commit</p>
+        </div>
+      </div>
+      <div class="q-row" style="border-left-color: var(--green); padding: 0.7rem 1rem;">
+        <span class="q-num green" style="font-size: 1.6rem;">3</span>
+        <div class="q-body">
+          <h3 style="font-size: 1.05rem;">Mensajes de commit claros</h3>
+          <p class="dim small">En 3 meses, ¿vas a entender “fix”? Probablemente no</p>
+        </div>
+      </div>
+      <div class="q-row" style="border-left-color: var(--orange); padding: 0.7rem 1rem;">
+        <span class="q-num orange" style="font-size: 1.6rem;">4</span>
+        <div class="q-body">
+          <h3 style="font-size: 1.05rem;">No editen archivos globales</h3>
+          <p class="dim small">Si tocan algo compartido del equipo, abran PR</p>
+        </div>
+      </div>
+      <div class="q-row" style="border-left-color: var(--red); padding: 0.7rem 1rem;">
+        <span class="q-num red" style="font-size: 1.6rem;">5</span>
+        <div class="q-body">
+          <h3 style="font-size: 1.05rem;">Si tienen duda → branch</h3>
+          <p class="dim small">Cualquier duda = branch + PR. Es gratis.</p>
+        </div>
+      </div>
+      </div>
+    </div>
+    <div>
+      <h3 style="margin-bottom: 0.5rem;">Errores comunes (no se asusten)</h3>
+      <pre class="prompt big" style="font-size:0.92rem; line-height:1.65;"><span style="color:var(--red);font-weight:700;">fatal: not a git repository</span>
+   → están en la carpeta equivocada
+   → <span style="color:var(--green);font-weight:700;">$</span> cd al proyecto correcto
+
+<span style="color:var(--red);font-weight:700;">Your branch is behind 'origin/main'</span>
+   → alguien hizo cambios
+   → <span style="color:var(--green);font-weight:700;">$</span> git pull
+
+<span style="color:var(--red);font-weight:700;">Permission denied (publickey)</span>
+   → GitHub no te reconoce
+   → configuren credenciales SSH o HTTPS
+
+<span style="color:var(--red);font-weight:700;">Changes not staged for commit</span>
+   → editaste pero no hiciste add
+   → <span style="color:var(--green);font-weight:700;">$</span> git add archivo</pre>
+    </div>
+  </div>
+  <div class="callout mt-3">
+    <span class="bar bg-blue"></span>
+    <div>
+      <strong>Regla maestra:</strong>
+      <span class="light"> si ven un error que no entienden, <strong>copien · peguen · pregúntenle a su agente</strong>. Tiene contexto del repo y conoce los errores comunes. No es trampa, es eficiencia.</span>
+    </div>
+  </div>
+</section>
+
+
+<section class="slide " data-idx="15">  <header class="hdr">    <span class="eyebrow">Cierre</span>    <span class="page">15 / 16</span>  </header>
+  <div class="title-block"><div class="kicker">Lo que se llevan de hoy</div><h1>Recap</h1></div>
+  <div class="grow" style="display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: 1fr 1fr; gap: 1rem;">
+    <div class="card">
+      <div class="stripe bg-blue"></div>
+      <div style="font-size: 2.4rem; line-height: 1; margin-bottom: 0.4rem;">🎬</div>
+      <h3>Git = time machine</h3>
+      <p class="small dim">Commits son fotos de su proyecto. Vuelven cuando quieran.</p>
+    </div>
+    <div class="card">
+      <div class="stripe bg-purple"></div>
+      <div style="font-size: 2.4rem; line-height: 1; margin-bottom: 0.4rem;">☁️</div>
+      <h3>GitHub = Drive para Git</h3>
+      <p class="small dim">Donde viven los archivos en la nube. Para colaborar.</p>
+    </div>
+    <div class="card">
+      <div class="stripe bg-green"></div>
+      <div style="font-size: 2.4rem; line-height: 1; margin-bottom: 0.4rem;">🔄</div>
+      <h3>4 pasos · su workflow</h3>
+      <p class="small dim">Pull → Edit → Commit → Push. El 80% de su uso de Git.</p>
+    </div>
+    <div class="card">
+      <div class="stripe bg-orange"></div>
+      <div style="font-size: 2.4rem; line-height: 1; margin-bottom: 0.4rem;">🤖</div>
+      <h3>Su agente · mismos comandos</h3>
+      <p class="small dim">No es magia. Corre git/gh igual que ustedes. Ustedes aprueban.</p>
+    </div>
+    <div class="card">
+      <div class="stripe bg-red"></div>
+      <div style="font-size: 2.4rem; line-height: 1; margin-bottom: 0.4rem;">🌿</div>
+      <h3>Branches + PRs · trunk</h3>
+      <p class="small dim">Branches cortas, PRs frecuentes. Main siempre integrada.</p>
+    </div>
+    <div class="card">
+      <div class="stripe bg-teal"></div>
+      <div style="font-size: 2.4rem; line-height: 1; margin-bottom: 0.4rem;">⚠️</div>
+      <h3>Conflicts · raros</h3>
+      <p class="small dim">1 al mes si eso. Git avisa. No pueden romper nada.</p>
+    </div>
+  </div>
+  <div class="callout mt-3">
+    <span class="bar bg-blue"></span>
+    <div>
+      <strong>Mental model:</strong>
+      <span class="light"> el agente teclea cien veces más rápido que ustedes. <strong>Ustedes aprueban qué entra y qué no.</strong> Junior eficiente + senior con criterio.</span>
+    </div>
+  </div>
+</section>
+
+
+<section class="slide " data-idx="16">  <header class="hdr">    <span class="eyebrow">Cierre</span>    <span class="page">16 / 16</span>  </header>
+  <div class="title-block"><div class="kicker">¿Y ahora qué? · acciones concretas + lo que viene</div><h1>Next steps + el harness que viene</h1></div>
+  <div class="cols-2 grow">
+    <div class="card">
+      <div class="stripe bg-green"></div>
+      <h3>🎯 Esta semana</h3>
+      <p class="dim small">Lo que depende de ustedes · 4 cosas concretas</p>
+      <ul class="checklist" style="margin-top: 0.6rem; gap: 0.5rem;">
+        <li><span class="check green">☐</span> Instalen <strong>git + gh CLI</strong> (slide 7 tiene los comandos)</li>
+        <li><span class="check green">☐</span> Clonen el repo de práctica que les vamos a compartir</li>
+        <li><span class="check green">☐</span> Practiquen los 4 pasos: <strong>pull → edit → commit → push</strong></li>
+        <li><span class="check green">☐</span> Configuren Git en su agente · Claude Code, Cursor, Codex</li>
+      </ul>
+      <p class="small dim" style="margin-top: 0.8rem;">No tienen que esperar a nadie · pueden empezar hoy mismo.</p>
+    </div>
+    <div class="card">
+      <div class="stripe bg-purple"></div>
+      <h3>🚀 Próximamente · AI Builders Harness</h3>
+      <p class="dim small">Lo que viene encima de Git · próximas semanas</p>
+      <p class="small" style="margin-top: 0.5rem;"><strong>📦 Repo central</strong> <code>habi-ai-builders</code></p>
+      <p class="small dim" style="margin-left: 1.4rem;">HABI_CONTEXT · HABI_GUIDELINES · AGENTS.md templates</p>
+      <p class="small" style="margin-top: 0.4rem;"><strong>🛡️ Guardrails automáticos</strong></p>
+      <p class="small dim" style="margin-left: 1.4rem;">Pre-commit hooks · tool restrictions · quality gates</p>
+      <p class="small" style="margin-top: 0.4rem;"><strong>🔄 Sync automático</strong></p>
+      <p class="small dim" style="margin-left: 1.4rem;">El contexto de Habi se distribuye solo a tus proyectos</p>
+      <p class="small" style="margin-top: 0.6rem; color: var(--blue);">Todo eso vive en GitHub. Sin Git, no hay harness.</p>
+    </div>
+  </div>
+  <div class="callout mt-3">
+    <span class="bar bg-orange"></span>
+    <div>
+      <strong>Esta charla fue LA BASE.</strong>
+      <span class="light"> El harness viene encima en las próximas semanas — y van a estar listos para usarlo desde el día uno. Mientras tanto: <strong>hagan, prueben, rompan cosas en los repos de práctica</strong>. Equivocarse en Git es la mejor forma de aprenderlo. No pueden romper nada permanentemente.</span>
+    </div>
+  </div>
+  <div style="text-align: center; margin-top: 1.4rem;">
+    <span style="font-size: 1.6rem; font-weight: 700; letter-spacing: -0.02em;">Q&A · ¿Qué dudas tienen?</span>
+  </div>
+</section>
+
+  </main>
+  <div class="hud" style="--progress: 0%"></div>
+  <aside class="notes-pane">
+<article class="note" data-idx="1"><h4>Slide 01</h4><p><strong>[1 minuto]</strong></p><p>Hola a todos. Hoy vamos a hablar de Git y GitHub.</p><p>Antes de arrancar, dos cosas que quiero que tengan en mente. Primero: <strong>vamos a aprender lo mínimo que necesitan, no todos los comandos de Git</strong>. La idea no es que se vuelvan expertos hoy — es que entiendan lo justo para empezar a trabajar.</p><p>Segundo, y esto es lo importante para ustedes como AI Builders: <strong>vamos a ver cómo lo usan ustedes Y cómo lo usa su agente</strong>. Mitad y mitad. Porque para los que están construyendo con Claude Code, Cursor, Codex — la mitad del valor está en que su agente trabaje bien con Git, no solo ustedes.</p><p>Para arrancar, una pregunta.</p></article>
+<article class="note" data-idx="2"><h4>Slide 02</h4><p><strong>[2 minutos]</strong></p><p>Levanten la mano los que tienen archivos en su computadora con nombres como estos. [pausa para manos]</p><p>Sí, todos. Esto nos pasa a todos. La pregunta natural es: ¿cuál es la versión correcta? Y la respuesta honesta es: nadie sabe. Hay que abrir cada uno, leer, comparar, preguntarle a María cuál era el último que mandó.</p><p>Con documentos esto es <strong>molesto</strong>. Perdés diez minutos buscando la versión correcta, pero es manejable.</p><p>Ahora pensemos en el contexto de ustedes como AI Builders. Están construyendo con coding agents. Tienen archivos de contexto — los AGENTS.md, los CLAUDE.md, los archivos de prompts —, tienen specs, tienen código que el agente generó. Y todo eso evoluciona día a día.</p><p>Si manejan eso con `email_final_v2_REAL.docx`, no es molesto — es <strong>desastroso</strong>.</p><p>¿Por qué? Cuatro razones concretas: pierden contexto, el agente arranca con información vieja, los cambios de ayer desaparecen, y si trabajan con otra persona, alguien va a pisar el trabajo del otro sin darse cuenta.</p><p>Git resuelve esto. Es la herramienta que la industria entera usa para no caer en este caos. Y hoy vamos a ver cómo usarla — sin que les duela.</p></article>
+<article class="note" data-idx="3"><h4>Slide 03</h4><p><strong>[4 minutos]</strong></p><p>Antes que nada, una aclaración que les va a ahorrar mucha confusión: <strong>Git no es lo mismo que GitHub</strong>. La gente los usa como sinónimos pero son cosas distintas.</p><p><strong>Git</strong> es un sistema de control de versiones. Es un programa que corre en su computadora. Si ustedes usaron alguna vez "Track Changes" en Word, eso es la idea — pero con esteroides. Git registra cada cambio que hacen y les permite volver atrás cuando quieran.</p><p><strong>GitHub</strong> es un servicio en la nube — propiedad de Microsoft — que aloja repositorios de Git. Piensen en GitHub como Google Drive, pero específicamente para proyectos de Git. Ahí guardan sus archivos, ahí colaboran con su equipo.</p><p>Pueden usar Git sin GitHub (totalmente local), pero para colaborar y para que su agente trabaje bien, necesitan ambos. Ok, sigamos.</p><p>[transición al diagrama Netflix]</p><p>La mejor analogía que conozco para Git es <strong>Netflix</strong>.</p><p>Imaginen que su proyecto es una serie de Netflix. Cada cambio importante que hacen es un episodio. El lunes agregaron login — episodio 1. El martes arreglaron un bug — episodio 2. El miércoles agregaron un dashboard — episodio 3. Hoy, jueves, están agregando una API de pagos — están grabando el episodio 4.</p><p>Cada uno de esos "episodios" en Git se llama un <strong>commit</strong>. Es una foto del proyecto en ese momento, con una descripción de qué cambió.</p><p>Hay una diferencia clave con Netflix, eh: en Netflix los episodios ya existen, ustedes solo los miran. En Git, <strong>ustedes son el director</strong>. Ustedes deciden cuándo grabar cada episodio. Si trabajaron 3 horas y no commitearon, no hay episodio. Es importante que entiendan esto: Git no graba automáticamente, ustedes decretan cuándo cerrar un episodio.</p><p>¿Qué pueden hacer con esto? Tres cosas que les van a salvar la vida:</p><p>Primero, pueden ver cualquier episodio anterior. ¿Cómo se veía el proyecto el martes a las 3pm? Lo abren, lo ven.</p><p>Segundo, pueden volver atrás. "Esto que agregué hoy rompió todo, volvamos a ayer." Un comando, listo.</p><p>Tercero, y esto es lo más útil en el día a día: pueden ver exactamente qué cambió entre dos episodios. "El viernes algo se rompió, ¿qué cambió desde el jueves?" Git les muestra línea por línea.</p><p>Esto es Git. Time machine para su proyecto. Sigamos con los conceptos básicos.</p></article>
+<article class="note" data-idx="4"><h4>Slide 04</h4><p><strong>[4 minutos]</strong></p><p>Hay dos conceptos que si entienden bien, el resto de la charla cae solo. Repository y commit. Vamos uno por uno.</p><p><strong>Repository, o "repo".</strong> Un repo es básicamente la carpeta de su proyecto. Si tienen un proyecto en `mi-proyecto/`, esa carpeta entera es el repo.</p><p>¿Cuál es la diferencia con una carpeta común de Google Drive? Google Drive guarda solo la versión actual de cada archivo. Si editan un archivo y lo guardan, perdieron lo que había antes — bueno, técnicamente Google guarda historial, pero por archivo, no por proyecto.</p><p>Un repo de Git guarda los archivos <strong>más todo el historial</strong> de cambios, <strong>del proyecto entero</strong>. Es como Google Docs con "ver historial de versiones", pero aplicado a la carpeta completa, no a un solo archivo. Eso les permite ver, en cualquier momento, cómo se veía el proyecto entero hace una semana, hace un mes, hace seis meses.</p><p>[pasamos al segundo concepto]</p><p><strong>Commit.</strong> Esto es el corazón de Git, así que prestemos atención.</p><p>Un commit es <strong>un cambio guardado con descripción</strong>. Es exactamente lo que hablamos en el slide anterior: el "episodio" que ustedes graban.</p><p>La analogía que me gusta más para esto es: imaginen que cada commit es <strong>una foto de su proyecto en ese momento</strong>, y ustedes escriben en el reverso de la foto qué cambió. "Foto 1: agregué login. Foto 2: arreglé un bug. Foto 3: nueva API."</p><p>¿Por qué es importante la descripción? Porque en dos semanas, cuando alguien — o ustedes mismos — pregunten "¿por qué cambiamos esto?", abren la historia, leen la descripción, y se acuerdan. Sin descripciones, esto es imposible.</p><p>Una regla práctica que les va a salvar la vida: <strong>descripción clara, siempre</strong>. Más tarde vamos a ver ejemplos de buenas y malas descripciones.</p><p>Estos dos conceptos — repo y commit — son el 80% de Git. Si los entienden, ya están. Lo demás es vocabulario.</p></article>
+<article class="note" data-idx="5"><h4>Slide 05</h4><p><strong>[1 minuto]</strong></p><p>Antes de seguir, vocabulario rápido. No necesitan memorizar nada — solo reconocer cuando los vean en lo que viene.</p><p><strong>Clone</strong>: copiar un repo desde GitHub a su computadora. Es como descargar una carpeta entera de Drive.</p><p><strong>Pull</strong>: traerse los cambios nuevos que hicieron otros. Si María hizo cambios y los subió, ustedes hacen pull para tenerlos. Es el "refresh" de Gmail.</p><p><strong>Push</strong>: lo opuesto. Subir sus cambios a GitHub para que el equipo los vea. Es como guardar en la nube.</p><p><strong>Merge</strong>: unir cambios de dos lados. Lo van a ver más adelante con branches.</p><p><strong>Conflict</strong>: cuando dos personas editaron exactamente la misma línea al mismo tiempo. Pasa rara vez, suena peor de lo que es, lo vamos a ver al final.</p><p>Listo, ya tienen el vocabulario. Ahora veamos cómo se usa todo esto en el día a día.</p></article>
+<article class="note" data-idx="6"><h4>Slide 06</h4><p><strong>[5 minutos]</strong></p><p>Acá está la parte más importante de toda la charla. Si se llevan algo de hoy, que sean estos cuatro pasos. <strong>Pull, Edit, Commit, Push.</strong> Los van a hacer todos los días, miles de veces. Es el 80% del uso de Git.</p><p>Vamos uno por uno. Y para cada uno les voy a mostrar dos formas de hacerlo: terminal — escribiendo comandos — y GitHub Desktop — clickeando en una app. Elijan la que les acomode más, hacen exactamente lo mismo.</p><p><strong>Paso 1: Pull. Traer los últimos cambios.</strong></p><p>Antes de tocar cualquier archivo, traen lo último. Por qué: porque tal vez María subió cambios mientras ustedes dormían, y si editan sin hacer pull, después se les arma un quilombo de conflicts.</p><p>En terminal: `git pull`. Una palabra. En GitHub Desktop: click en "Fetch origin" arriba, y si hay cambios, "Pull origin". La analogía es hacer refresh en Gmail antes de leer mails — quieren ver lo último, no lo de hace tres horas.</p><p><strong>Paso 2: Edit. Editar archivos.</strong></p><p>Esto es lo que ya saben hacer. Abren un archivo en su editor — VS Code, Sublime, lo que sea — y lo modifican. Git no se entera de nada todavía. Editan tranquilos.</p><p><strong>Paso 3: Commit. Guardar sus cambios con descripción.</strong></p><p>Esto es el "graban el episodio". En terminal son dos comandos. Primero `git add` con el archivo — esto le dice a Git "este archivo lo quiero incluir en el commit". Es como armar el paquete antes de enviarlo. Después `git commit -m` con la descripción entre comillas. La descripción es lo que aparece en la "foto" — pongan algo claro, no "fix" ni "asd".</p><p>En GitHub Desktop es todo en una pantalla: ven los archivos cambiados, ponen un check en los que quieren incluir, escriben el resumen, y click en "Commit to main". Listo.</p><p><strong>Paso 4: Push. Subir a GitHub.</strong></p><p>Hasta aquí todo lo que hicieron está solo en su computadora. Para que el equipo lo vea, hay que subirlo. En terminal: `git push`. En GitHub Desktop: click en "Push origin". Y ya está, sus cambios viven en la nube.</p><p>[gesto al diagrama de los 4 pasos]</p><p>Pull, edit, commit, push. Cuatro pasos. <strong>Es literalmente lo que van a hacer todos los días.</strong> No necesitan saber nada más para arrancar. En serio.</p><p>Si los comandos de terminal los intimidan, <strong>usen GitHub Desktop sin culpa</strong>. No es "menos profesional", no es "para principiantes" — hace exactamente lo mismo. Mucha gente que lleva años trabajando con Git usa GitHub Desktop porque es más rápido visualmente.</p><p>Esto es lo que hacen ustedes. Ahora veamos qué hace su agente.</p></article>
+<article class="note" data-idx="7"><h4>Slide 07</h4><p><strong>[2 minutos]</strong></p><p>Llegamos a la mitad de la charla. Hasta aquí vimos el lado humano. Ahora veamos el lado del agente. Este bloque vale el mismo tiempo que el anterior porque el agente es la mitad del valor.</p><p>Lo primero, antes que nada, es <strong>setup</strong>. Su agente — Claude Code, Cursor, Codex, el que sea — necesita dos herramientas instaladas en su computadora para poder trabajar con Git: <strong>Git</strong> y <strong>GitHub CLI</strong>, que es un comando que se llama `gh`.</p><p>¿Por qué? Porque su agente, cuando hace cambios al proyecto, necesita poder hacer commits, crear branches, abrir Pull Requests. Y la única forma que tiene de hacer eso es ejecutando los mismos comandos que ustedes podrían escribir. Si Git no está instalado, el agente literalmente no puede commitear nada. Va a hacer cambios en archivos, pero esos cambios se quedan en el limbo, sin guardarse en el historial.</p><p>Las instalaciones son rápidas. En Mac es `brew install git` y `brew install gh`. En Windows, `winget install`. En Linux, `apt-get install`. Tienen los comandos exactos en el slide.</p><p>Y después una vez: `gh auth login`. Esto autentica el comando `gh` con su cuenta de GitHub. Sigan las instrucciones en pantalla, copian un código, lo pegan en el browser, listo.</p><p><strong>Esto es una sola vez en la vida.</strong> Después se olvidan, y su agente lo usa solo cuando lo necesita.</p><p>Una aclaración importante: GitHub Desktop <strong>no aplica</strong> para los agentes. Los agentes no clickean botones en una app — ellos ejecutan comandos. Así que aunque ustedes prefieran GitHub Desktop para su trabajo, igual tienen que instalar Git y `gh` para que su agente funcione. Es requisito.</p><p>Listo, ya están seteados. Ahora veamos qué hace el agente con esto.</p></article>
+<article class="note" data-idx="8"><h4>Slide 08</h4><p><strong>[3 minutos]</strong></p><p>Acá viene la parte que más confusión genera con los agentes: <strong>¿qué hace el agente solo, sin que yo lo toque?</strong></p><p>La respuesta corta: <strong>lo mismo que hacen ustedes en el slide anterior</strong>. Pull, edit, commit, push. Pero usándolo por ustedes.</p><p>La forma más útil de pensar al agente es esta: es un <strong>junior eficiente</strong> que tiene acceso a las mismas herramientas que ustedes. Lee el repo, edita archivos, hace commits con mensajes que él mismo escribe, crea branches, hace push, y si le piden, abre Pull Requests.</p><p>Veamos un ejemplo concreto. Imaginen que le dicen al agente: *"Agregá la API de pagos al AGENTS.md"*. Una sola frase. Lo que hace el agente, paso por paso:</p><p>Primero, <strong>lee</strong> el AGENTS.md actual para entender qué hay. Después <strong>edita</strong> el archivo, le agrega la sección de pagos. Después corre `git add AGENTS.md` para preparar el commit. Después `git commit -m "Add payments API to AGENTS.md"` — fíjense que el mensaje lo escribió él, no ustedes. Después `git push` para subirlo. Y al final les dice: *"Listo, hice commit y push. Acá el diff por si quieren revisar"*.</p><p>¿Cuánto tardó esto? Veinte segundos. ¿Cuánto les hubiera tardado a ustedes? Cinco minutos.</p><p>Acá está la idea importante que quiero que se lleven: <strong>el agente no es magia</strong>. El agente está corriendo, literalmente, los mismos comandos que vimos en el slide anterior. `git add`, `git commit`, `git push`. No hay un "modo especial AI". Por eso necesita Git y `gh` instalados — porque sin ellos no tiene cómo ejecutar nada.</p><p>Esto tiene una consecuencia importante: si entienden Git mínimamente — los cuatro pasos del slide anterior — <strong>entienden lo que está haciendo su agente</strong>. Pueden mirar lo que hizo y validar. No es una caja negra.</p><p>Pero ojo: el agente puede equivocarse. Puede commitear algo que no era. Puede pisar trabajo de otra persona. Puede pushear sin que ustedes hayan revisado. Por eso el siguiente slide es crítico: <strong>ustedes son el code reviewer</strong>.</p></article>
+<article class="note" data-idx="9"><h4>Slide 09</h4><p><strong>[2 minutos]</strong></p><p>OK, el agente puede hacer mucho solo. La pregunta natural — y muy válida — es: <strong>¿no pierdo el control?</strong></p><p>La respuesta corta: <strong>no, ustedes mandan en cada paso.</strong> Tienen tres mecanismos de control, y los voy a explicar uno por uno.</p><p><strong>Primero: aprobación por herramienta.</strong> Cuando el agente quiere ejecutar algo "serio" — un commit, un push, abrir un PR — les pregunta antes. Aparece una notificación en su Claude Code, en su Cursor, lo que sea, que dice: *"Voy a correr `git commit -m 'X'`. ¿OK?"* Y ustedes deciden: aprobar este caso, aprobar siempre — eso se llama "auto-approve" — o rechazar y darle feedback. Para acciones que pisan main directamente, mi recomendación es <strong>no</strong> activar auto-approve al principio. Aprueben caso por caso hasta que confíen.</p><p><strong>Segundo: revisar el diff.</strong> Antes de pushear, el agente les muestra qué cambió. Líneas en verde, lo que agregó. Líneas en rojo, lo que sacó. Lo leen, lo entienden, lo validan. Si algo no les cierra, le dicen *"esto no, hacelo así"* y el agente corrige. No tienen que ser developers para leer un diff — verde es agregado, rojo es sacado. Punto.</p><p><strong>Tercero: para cambios grandes, Pull Requests.</strong> En vez de pushear directo a main, le piden al agente que abra un PR. Eso es un mecanismo de revisión más formal — vamos a verlo en el próximo slide. Útil cuando el cambio es grande o cuando otra persona del equipo necesita ver qué hicieron.</p><p>Y aquí está el mental model que quiero que se lleven: <strong>el agente es un junior que ejecuta. Ustedes son el senior que aprueba el merge.</strong> El agente puede teclear cien veces más rápido que ustedes, pero el criterio — qué entra y qué no — es de ustedes.</p><p>Si activan auto-approve para todo desde el día uno, están dándole al junior las llaves del auto sin license. Mal idea. Empiecen aprobando caso por caso. Con el tiempo van a saber en qué confía y en qué no, y ahí van ajustando.</p><p>Listo, eso es la sección del agente. Volvamos al lado más práctico: ¿cuándo conviene usar branches y PRs?</p></article>
+<article class="note" data-idx="10"><h4>Slide 10</h4><p><strong>[4 minutos]</strong></p><p>Hasta aquí vimos commits directos a main. Esto funciona muy bien para cambios chicos, fixes obvios, cosas en las que confían. Pero hay momentos donde no quieren commitear directo. Por ejemplo: están probando algo que puede no funcionar. O el cambio es grande y quieren que alguien lo revise antes de que entre. O van a tardar varios días en terminarlo y no quieren tener main "rota" mientras tanto.</p><p>Para esos casos existen dos cosas: <strong>branches</strong> y <strong>Pull Requests</strong>. Vamos una por una.</p><p><strong>Branch.</strong> Una branch es una <strong>línea de tiempo paralela</strong> del proyecto. Piénsenlo como un borrador antes del email final. La línea principal — main — sigue siendo la versión "oficial" del proyecto. Ustedes crean una branch nueva, le ponen un nombre — por ejemplo `experimento-pagos` —, y trabajan ahí. Hacen los commits que quieran, pueden ser cinco, pueden ser veinte, no importa. Main no se entera de nada de lo que están haciendo.</p><p>[gesto al diagrama]</p><p>Acá lo ven: main sigue avanzando con sus commits "oficiales", y por debajo va la branch del experimento, separada. Cuando deciden si funcionó o no, pasan al segundo concepto.</p><p><strong>Pull Request, o PR.</strong> Un PR es básicamente decir: *"Equipo, terminé mi trabajo en esta branch, por favor revísenlo antes de que lo agregue a main"*. Es un mecanismo de revisión formal.</p><p>El flujo es: trabajan en su branch, cuando están listos abren un PR — o le piden al agente que lo abra. El PR aparece en GitHub, alguien del equipo lo ve, mira el diff, deja comentarios, y al final aprueba o pide cambios. Cuando está aprobado, hacen click en "Merge" y los cambios entran a main.</p><p>¿Cómo abren un PR? Tres formas. En terminal: `gh pr create`. En GitHub Desktop: hay un botón "Create Pull Request". O le dicen al agente: *"Abrime un PR"*, y lo abre solo.</p><p>La analogía que mejor funciona: es como pedir feedback en un Google Doc, pero más formal y con un botón "Aprobar" explícito.</p><p>Una pregunta natural: <strong>¿siempre tengo que usar branches y PRs?</strong> No. Para AI Builders, al principio, <strong>commits directos a main están perfecto</strong> para la mayoría de los cambios. Branches y PRs son herramientas que tienen disponibles cuando las necesitan — para experimentos riesgosos, cambios grandes, o trabajo que requiere revisión.</p><p>Veamos esto un poco más en el próximo slide.</p></article>
+<article class="note" data-idx="11"><h4>Slide 11</h4><p><strong>[1 minuto]</strong></p><p>Esto que les acabo de describir — commits chicos, branches cortas, PRs frecuentes — tiene un nombre en la industria: <strong>trunk-based development</strong>. Es el patrón que usan equipos como Google, Facebook, y la mayoría de teams modernos.</p><p>La idea clave es esta: <strong>los cambios entran a main a través de un PR</strong>, pero las branches duran <strong>horas, no semanas</strong>. Hacen un cambio chico, abren branch, commit, abren PR, alguien lo aprueba en cinco minutos, merge. Y al rato, otro cambio. Y otro. Diez veces al día si hace falta.</p><p>¿Qué se evita con esto? El anti-patrón clásico: branches que viven dos semanas, mega-PRs de cincuenta archivos, y un merge gigante al final que rompe la mitad de las cosas y nadie sabe por qué.</p><p>Las ventajas son concretas: menos conflicts porque los cambios son chicos, main siempre está al día, todos ven los cambios de los demás rápido, y nunca hay merges dolorosos.</p><p>Una aclaración para que arranquen sin fricción: <strong>están en un entorno de aprendizaje</strong>. En los repos donde van a practicar, los PRs van a ser informales — pueden auto-aprobarse, no van a tener todas las protecciones formales que tiene producción. La idea es que se acostumbren al flujo: branch → commit → PR → merge. Las protecciones reales — branch protection rules, approvals obligatorios, status checks — van a ir apareciendo después.</p><p>Sigamos con algo que probablemente les preocupa: ¿qué pasa cuando hay conflicts?</p></article>
+<article class="note" data-idx="12"><h4>Slide 12</h4><p><strong>[2 minutos]</strong></p><p>Conflicts. La palabra suena fea. Mucha gente le tiene pánico a esto. Pero les voy a contar la verdad: <strong>los conflicts son raros y se resuelven en treinta segundos</strong>.</p><p>¿Qué es un conflict? Cuando dos personas — o un humano y un agente — editaron <strong>exactamente la misma línea</strong> del mismo archivo al mismo tiempo. La analogía que mejor funciona: dos personas hablando al mismo tiempo en una llamada de Zoom. Git no puede adivinar a cuál escuchar, así que les dice: *"Ey, ambos editaron esto. ¿Cuál versión quieren?"*</p><p>[mostrar el ejemplo del slide]</p><p>Cuando esto pasa, Git les marca el archivo con esos símbolos raros — los `&lt;&lt;&lt;&lt;`, `====`, `&gt;&gt;&gt;&gt;`. Al principio asusta, pero es muy simple: arriba está la versión de uno, abajo está la versión del otro, y ustedes deciden cuál queda — o si combinan ambas.</p><p>Cómo lo resuelven, dos formas:</p><p><strong>Forma fácil: GitHub Desktop.</strong> Detecta el conflict automáticamente, les dice "abran esto en VS Code", y en VS Code aparecen botones grandes: "Accept Current" — quédense con la mía —, "Accept Incoming" — quédense con la del otro —, "Accept Both" — combinen las dos. Click, listo, commit.</p><p><strong>Forma manual: terminal.</strong> Abren el archivo, deciden qué versión queda — o combinan —, <strong>borran las líneas raras</strong> con los símbolos, guardan, y hacen `git add` y `git commit`. También treinta segundos.</p><p>Ahora la parte tranquilizadora. Tres cosas:</p><p>Primero, <strong>Git les avisa</strong> antes de pisar el trabajo de alguien. No hay forma de "destruir" sin querer.</p><p>Segundo, <strong>conflicts pasan rara vez</strong>. En la práctica, si cada uno edita su parte del proyecto, conflicts son uno por mes — si eso. La gente que conoce Git bien casi nunca los ve.</p><p>Tercero, <strong>siempre pueden pedir ayuda</strong>. Si ven un conflict y se atascan, pegan el screenshot en `#ai-builders` Slack y alguien los ayuda. Nadie va a juzgarlos por preguntar.</p><p>Sigamos. Ahora un tour rápido por GitHub.com para que sepan qué ven cuando entran.</p></article>
+<article class="note" data-idx="13"><h4>Slide 13</h4><p><strong>[2 minutos]</strong></p><p>Rápido tour por GitHub.com. Probablemente ya entraron a GitHub alguna vez, pero quizás no entendieron bien qué era cada cosa. Este es el mapa.</p><p>[señalar al diagrama del repo]</p><p>Cuando abren un repo en GitHub, lo que ven es esto: arriba el nombre del proyecto, una fila de tabs, y abajo la lista de archivos.</p><p>Tres tabs van a usar todo el tiempo:</p><p><strong>Code.</strong> El default. Acá están los archivos del proyecto, y abajo de cada archivo dice cuál fue el último commit que lo tocó y quién. Útil para responder "¿qué se cambió últimamente?".</p><p><strong>Pull Requests.</strong> Acá viven los PRs abiertos y los cerrados. Si alguien abrió un PR para que ustedes lo revisen, lo ven aquí. También pueden ver los PRs viejos para entender el historial de cambios grandes.</p><p><strong>Actions.</strong> Acá viven las automatizaciones — cuando ustedes pushean, GitHub corre tests, validaciones, deploys, todo eso aparece en Actions. Útil para chequear si algo falló después de un push.</p><p>[pasar al diagrama del PR]</p><p>Ahora la pantalla de un Pull Request, que es la que más les va a importar.</p><p>Arriba el título y quién lo abrió. Después la lista de archivos cambiados. Y abajo el <strong>diff</strong> — la parte importante. Verde es lo que se agregó, rojo es lo que se sacó. Lo leen, lo entienden, y al final tienen tres botones: <strong>Approve</strong> para aprobar, <strong>Request Changes</strong> para pedir cambios, o <strong>Comment</strong> para dejar un comentario sin bloquear.</p><p>Cuando un PR está aprobado, el botón <strong>Merge</strong> se habilita y los cambios entran a main.</p><p>Esto es básicamente todo lo que necesitan saber del web. Lo demás se aprende clickeando. Avancemos a las reglas que les van a evitar el 80% del sufrimiento.</p></article>
+<article class="note" data-idx="14"><h4>Slide 14</h4><p><strong>[2 minutos]</strong></p><p>Cinco reglas que si las siguen, evitan el 80% de los problemas que tiene la gente con Git. Las repaso rápido.</p><p><strong>Uno: pull antes de editar.</strong> Siempre. Es lo primero que hacen al sentarse a trabajar. `git pull`. Esto evita conflicts antes de que existan.</p><p><strong>Dos: commits chicos y frecuentes.</strong> No esperen dos semanas para hacer un mega commit con cincuenta cambios. Vayan commiteando cada vez que terminan algo concreto. "Agregué API de pagos", commit. "Actualicé el tech stack", commit. "Documenté el proceso de testing", commit. Tres commits, tres pasos claros. Versus un único commit "cambios varios" que en tres meses no entiende nadie.</p><p><strong>Tres: mensajes de commit claros.</strong> Esto es la regla que más se viola. La pregunta que tienen que hacerse es: *"En tres meses, ¿voy a entender qué hice aquí?"*. Si el mensaje es "fix" o "asd" o "updates", la respuesta es no. Pongan algo descriptivo aunque les tome 5 segundos extra.</p><p><strong>Cuatro: no editen archivos globales sin avisar.</strong> Si están en su propio AGENTS.md, en su propio README, editan libremente. Pero si tocan archivos compartidos del equipo o globales de la empresa, abran un PR o pregunten primero. Esto es cortesía y evita pisar trabajo de otros.</p><p><strong>Cinco: si no están seguros, branch.</strong> Cualquier cosa que les genere duda — cambio grande, experimento, "no sé si va a funcionar" — eso va en branch + PR. El costo de abrir un branch es cero, el costo de romper main es alto.</p><p>[transición a errores comunes]</p><p>Y ya que estamos, los <strong>cuatro errores más comunes</strong> que van a ver, y cómo arreglarlos.</p><p>`fatal: not a git repository`. Significa que están en la carpeta equivocada. `cd` al proyecto correcto y listo.</p><p>`Your branch is behind 'origin/main'`. Alguien más hizo cambios que ustedes no tienen. `git pull` para traerlos.</p><p>`Permission denied (publickey)`. GitHub no los reconoce. Esto requiere configurar credenciales — pidan ayuda en `#ai-builders`, los ayudamos en cinco minutos.</p><p>`Changes not staged for commit`. Editaron archivos pero no hicieron `git add`. Solución: `git add` con el archivo, después `git commit`.</p><p><strong>Regla maestra</strong>: si ven un error que no entienden, <strong>copia, pega en `#ai-builders` Slack</strong>. Alguien ya lo vio antes, alguien sabe la solución.</p></article>
+<article class="note" data-idx="15"><h4>Slide 15</h4><p><strong>[1 minuto]</strong></p><p>Recap rápido de qué cubrimos.</p><p>Git es time machine para su proyecto: commits son fotos, GitHub es donde viven esas fotos en la nube.</p><p>El workflow básico de ustedes son cuatro pasos: pull, edit, commit, push. Eso es el 80% de su uso de Git en el día a día.</p><p>Su agente — Claude Code, Cursor, Codex — usa exactamente los mismos comandos que ustedes. No es magia. Por eso necesita git y `gh` instalados. Y ustedes son el code reviewer: aprueban los commits, leen los diffs, deciden qué entra.</p><p>Branches y Pull Requests son herramientas que tienen disponibles cuando las necesitan: experimentos riesgosos, cambios grandes, cosas que requieren revisión. No son obligatorias para todo.</p><p>Conflicts pasan poco y se resuelven en treinta segundos.</p><p>Y cinco reglas para no sufrir: pull antes de editar, commits chicos y frecuentes, mensajes claros, no editar archivos globales sin avisar, branch para experimentos.</p><p>Eso es todo. Vamos a los próximos pasos.</p></article>
+<article class="note" data-idx="16"><h4>Slide 16</h4><p><strong>[1-5 minutos según Q&amp;A]</strong></p><p>Antes de abrir Q&amp;A, dos cosas. Próximos pasos prácticos, y por qué esta charla importa más allá de "saber Git".</p><p><strong>Esta semana, cuatro cosas concretas.</strong> Instalen Git y `gh` CLI — el slide 6 tiene los comandos exactos para Mac, Windows y Linux. Cloneen su primer repo — el de práctica que vamos a compartir hoy. Practiquen el workflow básico: pull, edit, commit, push. Y configuren Git en su agente, sea Claude Code, Cursor o el que usen.</p><p>[transición al harness]</p><p>Ahora la pregunta que algunos se están haciendo: <strong>¿por qué les estoy enseñando Git ahora?</strong></p><p>Lo que viene en las próximas semanas es el <strong>AI Builders Harness de Habi</strong>. Un repo central — `habi-ai-builders` — que va a tener todo el contexto que sus agentes necesitan: HABI_CONTEXT con qué es Habi, el stack, las APIs internas. HABI_GUIDELINES con las best practices. Templates de AGENTS.md por proyecto. Pre-commit hooks que detectan secrets, PII, archivos `.env` que no deberían commitearse. Tool restrictions que bloquean comandos peligrosos. Y sync automático del contexto a sus proyectos individuales.</p><p>Todo eso vive en GitHub. Todo eso se distribuye con Git. Todo eso requiere que ustedes y sus agentes sepan hacer pull, commit, push, abrir un PR.</p><p><strong>Esta charla fue la base.</strong> El harness viene en las próximas semanas, y van a estar listos para usarlo el primer día. Si no supieran Git, el rollout del harness los iba a tomar por sorpresa. Ahora no.</p><p>Una última cosa antes de abrir Q&amp;A: <strong>no van a romper nada.</strong> Git es time machine, todo es reversible. Equivocarse en Git es la mejor forma de aprenderlo. Hagan, prueben, rompan cosas en los repos de práctica. Cualquier duda — cualquier — va a `#ai-builders` en Slack.</p><p>Ahora sí, Q&amp;A. ¿Qué dudas tienen?</p><p>---</p><p>## Q&amp;A — Preguntas Frecuentes Anticipadas</p><p>(Para responder en Q&amp;A si surgen — no son slides)</p><p><strong>P: ¿Qué pasa si rompo algo?</strong><br>R: Git guarda TODO. Siempre pueden volver atrás. No hay forma de "romper permanentemente".</p><p><strong>P: ¿Puedo trabajar offline?</strong><br>R: Sí. Git funciona local. Hacés commits offline, push cuando tengas internet.</p><p><strong>P: ¿Necesito memorizar comandos?</strong><br>R: No. Usá GitHub Desktop, o copia/pega del cheat sheet (handout). Con práctica se vuelve automático.</p><p><strong>P: ¿Cuándo usar branch vs main directo?</strong><br>R: Main directo para cambios chicos seguros. Branch para experimentos o cambios que pueden romper algo.</p><p><strong>P: ¿Qué pasa si commiteo un .env con secrets?</strong><br>R: GitHub bloquea el push automáticamente. Además `.gitignore` previene esto. Si pasara, Platform Team lo limpia. No entres en pánico.</p><p><strong>P: ¿GitHub Desktop o terminal?</strong><br>R: Para ustedes: cualquiera, GitHub Desktop es más fácil al inicio. Para tu agente: necesita git + gh CLI sí o sí (no usa GitHub Desktop).</p><p><strong>P: ¿Mi agente puede romper mi repo?</strong><br>R: No, ustedes aprueban cada commit/push. Y aunque pasara, todo es reversible (Git es time machine).</p><p><strong>P: ¿Puedo recuperar algo que borré hace 2 meses?</strong><br>R: Sí. Si fue commiteado, Git lo tiene. Pedí ayuda en #ai-builders y lo recuperamos.</p><p><strong>P: ¿Puedo ver quién escribió cada línea de código?</strong><br>R: Sí — se llama "Git Blame". En GitHub: archivo → "Blame" → ves autor de cada línea.</p><p>---</p><p>## Notas para el Presentador</p></article>
+  </aside>
+  <div class="hint">← → navegar · <kbd>p</kbd> presenter · <kbd>n</kbd> notas inline · <kbd>f</kbd> fullscreen</div>
+<script>
+(function () {
+  const slides = Array.from(document.querySelectorAll('.slide'));
+  const notes = Array.from(document.querySelectorAll('.notes-pane .note'));
+  const total = slides.length;
+  const hud = document.querySelector('.hud');
+  const notesPane = document.querySelector('.notes-pane');
+
+  // Snapshot of all notes for the presenter window (idx + innerHTML).
+  const notesData = notes.map(n => ({ idx: +n.dataset.idx, html: n.innerHTML }));
+
+  let presenterWin = null;
+
+  function go(n) {
+    n = Math.max(1, Math.min(total, n));
+    slides.forEach(s => s.classList.toggle('active', +s.dataset.idx === n));
+    notes.forEach(s => s.classList.toggle('active', +s.dataset.idx === n));
+    hud.style.setProperty('--progress', (n / total * 100) + '%');
+    if (location.hash !== '#' + n) history.replaceState(null, '', '#' + n);
+    syncPresenter(n);
+  }
+  function current() {
+    return parseInt((location.hash || '#1').slice(1), 10) || 1;
+  }
+  function toggleNotes() { notesPane.classList.toggle('open'); }
+
+  function openPresenter() {
+    if (presenterWin && !presenterWin.closed) { presenterWin.focus(); return; }
+    presenterWin = window.open('', 'presenter', 'width=1100,height=750');
+    if (!presenterWin) {
+      alert('La ventana del presentador fue bloqueada por el navegador. Permití pop-ups para este sitio.');
+      return;
+    }
+    const tpl = `<!doctype html>
+<html lang="es"><head>
+<meta charset="utf-8">
+<title>Presenter · Notas</title>
+<style>
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { height: 100%; font-family: 'Inter', 'SF Pro Display', system-ui, sans-serif;
+               background: #0d0d0f; color: #f3f4f7; -webkit-font-smoothing: antialiased; }
+  body { padding: 2rem 2.4rem; display: flex; flex-direction: column; gap: 1rem; }
+  .hdr { display: flex; justify-content: space-between; align-items: baseline;
+         padding-bottom: 1rem; border-bottom: 1px solid #232329; }
+  .hdr .label { color: #b6b9c2; font-size: 0.78rem; letter-spacing: 0.16em;
+                text-transform: uppercase; font-weight: 600; }
+  .hdr .pg { font-variant-numeric: tabular-nums; }
+  .hdr .pg .num { font-size: 2.4rem; font-weight: 800; letter-spacing: -0.04em; color: #f3f4f7; }
+  .hdr .pg .total { color: #8b8e98; font-size: 1.1rem; margin-left: 0.3rem; }
+  .progress-bar { height: 3px; background: #232329; border-radius: 2px; overflow: hidden; }
+  .progress-bar .fill { height: 100%; background: #0a84ff; transition: width 0.25s ease; }
+  main { flex: 1; overflow-y: auto; padding-right: 0.5rem; }
+  main h4 { display: none; }
+  main p { font-size: 1.15rem; line-height: 1.65; color: #d4d6db; margin-bottom: 0.9rem; }
+  main strong { color: #f3f4f7; font-weight: 700; }
+  main code { background: #1a1a20; padding: 0.1rem 0.4rem; border-radius: 4px;
+              font-size: 0.95rem; color: #64d2ff; }
+  .empty { color: #8b8e98; font-style: italic; }
+  .foot { color: #8b8e98; font-size: 0.85rem; padding-top: 0.6rem;
+          border-top: 1px solid #232329; }
+  .foot kbd { background: #1a1a20; padding: 0.1rem 0.4rem; border-radius: 4px;
+              font-family: inherit; font-size: 0.8rem; }
+</style>
+</head><body>
+  <header class="hdr">
+    <span class="label">Notas del presentador</span>
+    <span class="pg"><span class="num" id="num">01</span><span class="total" id="total">/ 16</span></span>
+  </header>
+  <div class="progress-bar"><div class="fill" id="fill" style="width:0%"></div></div>
+  <main id="content"></main>
+  <footer class="foot">
+    Esta ventana se sincroniza con la principal · usen <kbd>← →</kbd> en cualquier ventana
+  </footer>
+<` + `script>
+  document.addEventListener('keydown', function (e) {
+    if (window.opener && !window.opener.closed) {
+      if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown') {
+        e.preventDefault();
+        window.opener.postMessage({ type: 'nav', dir: 1 }, '*');
+      } else if (e.key === 'ArrowLeft' || e.key === 'PageUp') {
+        e.preventDefault();
+        window.opener.postMessage({ type: 'nav', dir: -1 }, '*');
+      }
+    }
+  });
+<` + `/script>
+</body></html>`;
+    presenterWin.document.open();
+    presenterWin.document.write(tpl);
+    presenterWin.document.close();
+    presenterWin.notesData = notesData;
+    presenterWin.totalSlides = total;
+    // Wait for the new doc to be ready before first sync.
+    setTimeout(() => syncPresenter(current()), 50);
+  }
+
+  function syncPresenter(n) {
+    if (!presenterWin || presenterWin.closed) return;
+    const doc = presenterWin.document;
+    const numEl = doc.getElementById('num');
+    const totalEl = doc.getElementById('total');
+    const fillEl = doc.getElementById('fill');
+    const contentEl = doc.getElementById('content');
+    if (!numEl || !contentEl) return;
+    numEl.textContent = String(n).padStart(2, '0');
+    totalEl.textContent = '/ ' + String(total).padStart(2, '0');
+    fillEl.style.width = (n / total * 100) + '%';
+    const note = notesData.find(x => x.idx === n);
+    contentEl.innerHTML = note ? note.html : '<p class="empty">(sin notas para este slide)</p>';
+    contentEl.scrollTop = 0;
+  }
+
+  // Receive nav events from the presenter window.
+  window.addEventListener('message', (e) => {
+    if (e.data && e.data.type === 'nav') go(current() + e.data.dir);
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if (e.target.matches('input, textarea')) return;
+    if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown') { e.preventDefault(); go(current() + 1); }
+    else if (e.key === 'ArrowLeft' || e.key === 'PageUp') { e.preventDefault(); go(current() - 1); }
+    else if (e.key === 'Home') go(1);
+    else if (e.key === 'End') go(total);
+    else if (e.key === 'n' || e.key === 'N') toggleNotes();
+    else if (e.key === 'p' || e.key === 'P') openPresenter();
+    else if (e.key === 'f' || e.key === 'F') {
+      if (!document.fullscreenElement) document.documentElement.requestFullscreen();
+      else document.exitFullscreen();
+    }
+  });
+
+  // Click left/right halves to navigate
+  document.addEventListener('click', (e) => {
+    if (e.target.closest('a, button, .notes-pane')) return;
+    const w = window.innerWidth;
+    if (e.clientX < w * 0.35) go(current() - 1);
+    else if (e.clientX > w * 0.65) go(current() + 1);
+  });
+
+  // Close presenter window when main closes
+  window.addEventListener('beforeunload', () => {
+    if (presenterWin && !presenterWin.closed) presenterWin.close();
+  });
+
+  window.addEventListener('hashchange', () => go(current()));
+  go(current());
+})();
+</script>
+</body>
+</html>
