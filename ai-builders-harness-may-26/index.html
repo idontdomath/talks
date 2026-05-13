@@ -1,0 +1,1011 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AI Builders Harness</title>
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+:root {
+  --bg: #000;
+  --bg-elev: #0d0d0f;
+  --bg-card: #131318;
+  --text: #f3f4f7;
+  --dim: #8b8e98;
+  --light: #b6b9c2;
+  --line: #232329;
+  --blue: #0a84ff;
+  --green: #30d158;
+  --orange: #ff9f0a;
+  --purple: #bf5af2;
+  --red: #ff453a;
+  --teal: #64d2ff;
+  --pink: #ff375f;
+}
+html, body {
+  width: 100%; height: 100%; overflow: hidden;
+  font-family: 'Inter', 'SF Pro Display', system-ui, -apple-system, 'Helvetica Neue', sans-serif;
+  background: var(--bg); color: var(--text);
+  font-size: 19px; line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+@font-face { font-family: 'Inter'; font-weight: 100 900; font-style: normal; font-display: swap;
+             src: url('https://rsms.me/inter/font-files/InterVariable.woff2') format('woff2'); }
+.deck { position: relative; width: 100vw; height: 100vh; }
+
+/* Slide chrome */
+.slide {
+  position: absolute; inset: 0; display: none;
+  flex-direction: column; padding: 3.5rem 4.5rem 3rem;
+}
+.slide.active { display: flex; }
+.slide.cover { padding: 0; background: radial-gradient(circle at 22% 20%, #0d1a2b 0%, #000 55%); }
+
+/* Header */
+.hdr { display: flex; justify-content: space-between; align-items: center;
+       margin-bottom: 1.6rem; color: var(--dim); font-size: 0.9rem; }
+.eyebrow { letter-spacing: 0.14em; text-transform: uppercase; font-weight: 600; color: var(--light); }
+.page { font-variant-numeric: tabular-nums; color: var(--dim); }
+
+/* Titles */
+.title-block { margin-bottom: 1.4rem; }
+.title-block .kicker { color: var(--blue); font-weight: 600; font-size: 0.95rem;
+                       letter-spacing: 0.04em; margin-bottom: 0.3rem; }
+.slide h1 { font-size: 2.85rem; font-weight: 700; line-height: 1.08; letter-spacing: -0.02em; }
+.slide h2 { font-size: 1.7rem; font-weight: 700; line-height: 1.18; letter-spacing: -0.01em; }
+.slide h3 { font-size: 1.2rem; font-weight: 700; margin-bottom: 0.5rem; }
+.slide p { font-size: 1.05rem; }
+.slide .lede { font-size: 1.25rem; color: var(--light); margin-bottom: 1.4rem; max-width: 60rem; }
+
+/* Layout helpers */
+.grow { flex: 1; }
+.cols-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1.2rem; }
+.cols-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1.2rem; }
+.mt-1 { margin-top: 0.6rem; }
+.mt-2 { margin-top: 1.1rem; }
+.mt-3 { margin-top: 1.6rem; }
+.dim { color: var(--dim); }
+.light { color: var(--light); }
+.small { font-size: 0.95rem; }
+
+/* Cards */
+.card { background: var(--bg-card); border-radius: 14px; padding: 1.4rem 1.5rem;
+        display: flex; flex-direction: column; gap: 0.5rem; position: relative; overflow: hidden; }
+.card .stripe { position: absolute; top: 0; left: 0; right: 0; height: 4px; }
+.card .big-num { font-size: 2.4rem; font-weight: 800; line-height: 1; color: var(--text);
+                 letter-spacing: -0.04em; margin-bottom: 0.2rem; }
+
+/* Bg accents */
+.bg-blue { background: var(--blue); } .bg-green { background: var(--green); }
+.bg-orange { background: var(--orange); } .bg-purple { background: var(--purple); }
+.bg-red { background: var(--red); } .bg-teal { background: var(--teal); }
+.blue { color: var(--blue); } .green { color: var(--green); }
+.orange { color: var(--orange); } .purple { color: var(--purple); }
+.red { color: var(--red); } .teal { color: var(--teal); }
+
+/* Callouts */
+.callout { display: flex; align-items: stretch; gap: 1rem; padding: 1rem 1.2rem;
+           background: #0f0f13; border-radius: 12px; }
+.callout .bar { width: 4px; border-radius: 2px; flex-shrink: 0; }
+.callout strong { font-weight: 700; }
+
+/* Role tag */
+.role-tag { display: inline-block; padding: 0.2rem 0.7rem; border-radius: 999px;
+            font-size: 0.85rem; font-weight: 600; letter-spacing: 0.02em;
+            background: rgba(255,255,255,0.06); margin-bottom: 0.6rem; }
+.role-tag.blue { color: var(--blue); border: 1px solid rgba(10,132,255,0.35); }
+.role-tag.purple { color: var(--purple); border: 1px solid rgba(191,90,242,0.35); }
+.role-tag.orange { color: var(--orange); border: 1px solid rgba(255,159,10,0.35); }
+
+/* Prompt / code blocks */
+.prompt, .mono-block {
+  font-family: 'JetBrains Mono', 'SF Mono', Menlo, monospace;
+  background: #0a0a0d; border: 1px solid var(--line); border-radius: 10px;
+  padding: 0.9rem 1rem; font-size: 0.9rem; line-height: 1.5;
+  color: var(--light); white-space: pre-wrap;
+}
+.prompt em { color: var(--text); font-style: normal; font-weight: 700; }
+
+/* Cover */
+.cover-grid { display: grid; height: 100%; grid-template-rows: 1fr auto auto auto;
+              gap: 1.4rem; padding: 5rem 6rem 4rem; align-content: end; }
+.cover-meta { display: flex; align-items: center; gap: 0.6rem; }
+.cover-meta .label { letter-spacing: 0.18em; text-transform: uppercase;
+                     font-weight: 600; font-size: 0.85rem; color: var(--light); }
+.dot { width: 10px; height: 10px; border-radius: 50%; background: var(--blue); }
+.cover-title { font-size: 5rem; font-weight: 800; line-height: 1.02; letter-spacing: -0.035em; }
+.cover-quote { font-size: 1.35rem; color: var(--light); max-width: 50rem;
+               border-left: 3px solid var(--blue); padding-left: 1rem; }
+.cover-quote .quote-mark { color: var(--blue); font-size: 1.6rem; margin-right: 0.2rem; }
+.cover-foot { display: flex; gap: 2.5rem; color: var(--text); font-size: 0.95rem;
+              padding-top: 1rem; border-top: 1px solid var(--line); }
+.cover-footer { position: absolute; right: 4.5rem; bottom: 2rem; color: var(--dim); }
+
+/* Default body fallback */
+.raw-body { display: flex; flex-direction: column; gap: 0.35rem; max-width: 70rem; }
+.raw-body .section-head { margin-top: 0.8rem; color: var(--light);
+                          font-size: 1.05rem; letter-spacing: 0.02em; }
+.raw-body .num-row { display: flex; align-items: baseline; gap: 0.6rem; margin-top: 0.6rem; }
+.raw-body .num-tag { font-size: 1.4rem; font-weight: 800; color: var(--blue);
+                     min-width: 2rem; }
+.raw-body .num-text { font-size: 1.1rem; font-weight: 600; }
+.raw-body .bullet { font-size: 1.05rem; }
+.raw-body .arrow { font-size: 0.95rem; color: var(--dim); padding-left: 1rem; font-style: italic; }
+.raw-body blockquote { font-size: 1.15rem; font-style: italic; color: var(--light);
+                       border-left: 3px solid var(--blue); padding-left: 0.9rem; margin: 0.4rem 0; }
+.raw-body .line { color: var(--text); }
+.raw-body .indent { padding-left: 1.2rem; color: var(--light); }
+.raw-body .gap { height: 0.45rem; }
+.raw-body .mono-block { white-space: pre; font-size: 0.85rem; }
+
+/* Three-questions list (slide 5) */
+.q-list { display: flex; flex-direction: column; gap: 0.9rem; justify-content: center; }
+.q-row { display: flex; align-items: center; gap: 1.6rem; padding: 1.1rem 1.4rem;
+         background: var(--bg-card); border-radius: 14px; border-left: 4px solid transparent; }
+.q-row:nth-child(1) { border-left-color: var(--blue); }
+.q-row:nth-child(2) { border-left-color: var(--purple); }
+.q-row:nth-child(3) { border-left-color: var(--green); }
+.q-num { font-size: 2.3rem; font-weight: 800; line-height: 1; letter-spacing: -0.04em;
+         min-width: 3rem; font-variant-numeric: tabular-nums; }
+.q-body h3 { font-size: 1.4rem; margin-bottom: 0.25rem; }
+.q-body h3 em { color: var(--orange); font-style: normal; }
+.q-body p { font-size: 1.02rem; }
+
+/* Ideation split (slide 6) */
+.left-col, .right-col { display: flex; flex-direction: column; }
+.checklist { list-style: none; display: flex; flex-direction: column; gap: 0.55rem;
+             margin-top: 1.1rem; }
+.checklist li { display: flex; gap: 0.7rem; align-items: baseline; font-size: 1.08rem; }
+.checklist .check { font-weight: 800; flex-shrink: 0; width: 1rem; text-align: center; }
+.prompt-card { background: var(--bg-card); border-radius: 14px; overflow: hidden;
+               box-shadow: 0 12px 30px rgba(0,0,0,0.45); }
+.prompt-head { display: flex; align-items: center; gap: 0.4rem; padding: 0.6rem 0.9rem;
+               background: #1a1a20; border-bottom: 1px solid var(--line); font-size: 0.8rem; }
+.prompt-head .dot { width: 11px; height: 11px; border-radius: 50%; }
+.dot-red { background: var(--red); }
+.prompt-head .prompt-title { color: var(--dim); margin-left: 0.6rem;
+                             font-family: 'JetBrains Mono', monospace; }
+.prompt.big { font-size: 1rem; padding: 1.1rem 1.2rem; border: none; border-radius: 0;
+              background: transparent; }
+
+/* Seven elements (slide 7) */
+.elem-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.7rem 1.4rem; align-content: center; }
+.elem-row { display: flex; align-items: baseline; gap: 0.9rem;
+            padding: 0.7rem 0.9rem; border-radius: 10px; background: rgba(255,255,255,0.025); }
+.elem-row.is-key { background: rgba(48,209,88,0.08); border: 1px solid rgba(48,209,88,0.25); }
+.elem-num { font-size: 1.2rem; font-weight: 800; color: var(--blue);
+            min-width: 2.2rem; font-variant-numeric: tabular-nums; }
+.elem-row.is-key .elem-num { color: var(--green); }
+.elem-body h3 { font-size: 1.05rem; margin-bottom: 0.15rem; }
+.elem-body p { font-size: 0.92rem; }
+.key-tag { display: inline-block; font-size: 0.7rem; padding: 0.1rem 0.5rem;
+           border-radius: 999px; background: rgba(48,209,88,0.15); color: var(--green);
+           font-weight: 700; letter-spacing: 0.04em; margin-left: 0.4rem; vertical-align: middle; }
+.meta-row { display: flex; gap: 0.6rem; flex-wrap: wrap; }
+.meta-pill { padding: 0.45rem 0.9rem; border-radius: 999px;
+             background: rgba(255,255,255,0.05); border: 1px solid var(--line);
+             font-size: 0.85rem; color: var(--light); }
+.meta-pill strong { color: var(--text); margin-right: 0.3rem; }
+
+/* Critique loop (slide 8) */
+.loop { display: flex; flex-direction: column; gap: 1rem; align-items: stretch; }
+.loop-start { text-align: center; }
+.loop-pill { display: inline-block; padding: 0.5rem 1.4rem; border-radius: 999px;
+             background: rgba(10,132,255,0.15); border: 1px solid rgba(10,132,255,0.4);
+             color: var(--blue); font-weight: 700; font-size: 0.95rem; }
+.loop-rounds { display: grid; grid-template-columns: 1fr auto 1fr auto 1fr; gap: 0.6rem;
+               align-items: stretch; }
+.round-card { background: var(--bg-card); border-radius: 14px; padding: 1.1rem 1.2rem;
+              display: flex; flex-direction: column; gap: 0.45rem; }
+.round-tag { display: inline-block; align-self: flex-start; padding: 0.15rem 0.6rem;
+             border-radius: 6px; font-size: 0.75rem; font-weight: 700;
+             letter-spacing: 0.05em; text-transform: uppercase; margin-bottom: 0.2rem; }
+.round-tag.blue   { background: rgba(10,132,255,0.18); color: var(--blue); }
+.round-tag.purple { background: rgba(191,90,242,0.18); color: var(--purple); }
+.round-tag.teal   { background: rgba(100,210,255,0.18); color: var(--teal); }
+.round-card h3 { font-size: 1.15rem; }
+.round-arrow { display: flex; align-items: center; color: var(--dim);
+               font-size: 0.78rem; font-style: italic; padding: 0 0.2rem; }
+
+/* Compare cards (slide 10) */
+.card.compare { display: flex; flex-direction: column; gap: 0.7rem; }
+.compare-head { display: flex; align-items: center; gap: 0.5rem; font-weight: 700;
+                font-size: 1.1rem; letter-spacing: -0.01em; }
+.compare-icon { width: 1.5rem; height: 1.5rem; border-radius: 50%; display: inline-flex;
+                align-items: center; justify-content: center; font-weight: 800; font-size: 0.95rem; }
+.compare-icon.red   { background: rgba(255,69,58,0.18); color: var(--red); }
+.compare-icon.green { background: rgba(48,209,88,0.18); color: var(--green); }
+.card.compare.bad   { border: 1px solid rgba(255,69,58,0.25); }
+.card.compare.good  { border: 1px solid rgba(48,209,88,0.30); }
+
+/* Three-tier boundaries (slide 11) */
+.card.tier { display: flex; flex-direction: column; gap: 0.55rem; }
+.tier-head { display: flex; align-items: center; gap: 0.55rem; font-size: 1.2rem;
+             font-weight: 700; letter-spacing: -0.01em; }
+.tier-icon { width: 1.6rem; height: 1.6rem; border-radius: 50%; display: inline-flex;
+             align-items: center; justify-content: center; font-weight: 800; }
+.tier-icon.green  { background: rgba(48,209,88,0.18); color: var(--green); }
+.tier-icon.orange { background: rgba(255,159,10,0.18); color: var(--orange); }
+.tier-icon.red    { background: rgba(255,69,58,0.18); color: var(--red); }
+.tier-sub { font-size: 0.95rem; }
+.tier-always { border-top: 3px solid var(--green); }
+.tier-ask    { border-top: 3px solid var(--orange); }
+.tier-never  { border-top: 3px solid var(--red); }
+.prompt.mini { font-size: 0.85rem; padding: 0.7rem 0.9rem; line-height: 1.45; }
+
+/* Model settings — temperature scale (slide 12) */
+.temp-scale { display: flex; align-items: center; gap: 0.7rem; margin-bottom: 0.6rem; }
+.temp-label { color: var(--dim); font-variant-numeric: tabular-nums; font-size: 0.85rem;
+              font-family: 'JetBrains Mono', monospace; }
+.temp-bar { flex: 1; display: grid; grid-template-columns: 1fr 1fr; height: 56px;
+            border-radius: 10px; overflow: hidden; border: 1px solid var(--line); }
+.temp-zone { display: flex; flex-direction: column; align-items: center; justify-content: center;
+             padding: 0.4rem; gap: 0.15rem; }
+.temp-zone-label { font-weight: 700; font-size: 0.95rem; }
+.temp-zone-range { font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; opacity: 0.85; }
+.temp-low  { background: linear-gradient(90deg, rgba(10,132,255,0.35), rgba(10,132,255,0.18)); color: var(--blue); }
+.temp-high { background: linear-gradient(90deg, rgba(191,90,242,0.18), rgba(255,69,58,0.32)); color: #ffd0c8; }
+.phase-card { gap: 0.5rem; }
+.phase-tag { display: inline-block; align-self: flex-start; padding: 0.18rem 0.65rem;
+             border-radius: 999px; font-size: 0.78rem; font-weight: 700;
+             letter-spacing: 0.04em; text-transform: uppercase; }
+.phase-tag.purple { background: rgba(191,90,242,0.18); color: var(--purple); }
+.phase-tag.blue   { background: rgba(10,132,255,0.18); color: var(--blue); }
+.setting-list { list-style: none; display: flex; flex-direction: column; gap: 0.25rem;
+                margin-top: 0.4rem; font-size: 0.95rem; }
+.setting-list strong { color: var(--text); margin-right: 0.4rem; min-width: 8.5rem;
+                       display: inline-block; }
+.setting-list li { color: var(--light); }
+.callout.news em { color: var(--text); font-style: italic; }
+
+/* Spec → planning flow (slide 13) */
+.flow { display: grid; grid-template-columns: 1fr auto 1fr auto 1.4fr auto 1fr;
+        gap: 0.8rem; align-items: stretch; }
+.flow-step { background: var(--bg-card); border-radius: 14px; padding: 1.2rem 1rem;
+             display: flex; flex-direction: column; align-items: center; gap: 0.4rem;
+             text-align: center; }
+.flow-step.flow-output { text-align: left; align-items: flex-start; }
+.flow-step.flow-cmd { background: #060608; border: 1px solid var(--line); }
+.flow-icon { font-size: 1.6rem; line-height: 1; }
+.flow-label { font-weight: 700; font-size: 1rem; }
+.flow-sub { font-size: 0.85rem; }
+.flow-sub code { background: rgba(255,255,255,0.07); padding: 0 0.3rem;
+                 border-radius: 4px; font-family: 'JetBrains Mono', monospace;
+                 font-size: 0.85em; color: var(--green); }
+.flow-arrow { display: flex; align-items: center; color: var(--dim); font-size: 1.5rem; }
+.prompt.cmd { font-size: 1.05rem; padding: 0.7rem 1rem; background: #000;
+              color: var(--green); border-color: #1a1a1f; }
+.output-list { list-style: none; display: flex; flex-direction: column; gap: 0.35rem;
+               margin-top: 0.2rem; font-size: 0.95rem; width: 100%; }
+.output-list .b { color: var(--green); margin-right: 0.5rem; font-weight: 800; }
+.callout.emphasis strong { color: var(--green); }
+
+/* Example timeline (slide 14) */
+.timeline { position: relative; display: flex; flex-direction: column; gap: 0.7rem;
+            padding-left: 0.4rem; }
+.timeline::before { content: ""; position: absolute; left: 1.7rem; top: 1.6rem; bottom: 1.6rem;
+                    width: 2px; background: repeating-linear-gradient(to bottom,
+                    var(--line) 0 6px, transparent 6px 12px); }
+.tl-row { display: flex; align-items: flex-start; gap: 1rem; position: relative; }
+.tl-marker { flex: 0 0 3.4rem; display: flex; justify-content: center; }
+.tl-num { width: 2.6rem; height: 2.6rem; border-radius: 50%; display: inline-flex;
+          align-items: center; justify-content: center; font-weight: 800; font-size: 1.15rem;
+          background: var(--bg); border: 2px solid currentColor; position: relative; z-index: 1; }
+.tl-num.blue   { color: var(--blue); }
+.tl-num.purple { color: var(--purple); }
+.tl-num.teal   { color: var(--teal); }
+.tl-num.green  { color: var(--green); }
+.tl-body { flex: 1; padding-top: 0.15rem; }
+.tl-body h3 { font-size: 1.2rem; margin-bottom: 0.25rem; }
+.tl-body p { font-size: 1rem; line-height: 1.55; }
+.tl-body code { background: rgba(255,255,255,0.06); padding: 0.05rem 0.4rem;
+                border-radius: 4px; font-family: 'JetBrains Mono', monospace; font-size: 0.85em; }
+.callout.contrast { display: grid; grid-template-columns: 1fr auto 1fr;
+                    align-items: center; padding: 0.9rem 1.4rem; gap: 1.2rem; }
+.contrast-cell { display: flex; flex-direction: column; align-items: center; gap: 0.1rem; }
+.contrast-time { font-size: 1.7rem; font-weight: 800; letter-spacing: -0.02em; }
+.contrast-cell.good .contrast-time { color: var(--green); }
+.contrast-cell.bad  .contrast-time { color: var(--red); }
+.contrast-label { font-size: 0.85rem; color: var(--dim); letter-spacing: 0.04em; }
+.contrast-vs { color: var(--dim); font-style: italic; font-size: 0.95rem; }
+
+/* Context building doc cards (slide 15) */
+.doc-card { background: var(--bg-card); border-radius: 14px; padding: 1.2rem 1.3rem;
+            display: flex; flex-direction: column; gap: 0.5rem; position: relative; overflow: hidden; }
+.doc-card::before { content: ""; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+                    background: linear-gradient(90deg, var(--blue), transparent); }
+.doc-card:nth-child(2)::before { background: linear-gradient(90deg, var(--purple), transparent); }
+.doc-card:nth-child(3)::before { background: linear-gradient(90deg, var(--green), transparent); }
+.doc-head { display: flex; align-items: center; gap: 0.55rem; padding-bottom: 0.6rem;
+            border-bottom: 1px solid var(--line); margin-bottom: 0.4rem; }
+.doc-icon { font-size: 1.2rem; }
+.doc-name { font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; color: var(--light); }
+.doc-card h3 { font-size: 1.2rem; }
+.doc-bullets { list-style: none; display: flex; flex-direction: column; gap: 0.3rem;
+               font-size: 0.95rem; color: var(--light); }
+.doc-bullets li { padding-left: 1rem; position: relative; }
+.doc-bullets li::before { content: "›"; position: absolute; left: 0; color: var(--dim); }
+.doc-bullets em { color: var(--text); font-style: normal; font-weight: 600; }
+
+/* Harness AGENTS.md mockup (slide 16) */
+.harness-list { list-style: none; display: flex; flex-direction: column; gap: 0.4rem;
+                margin-top: 1rem; font-size: 1.05rem; }
+.harness-list li { padding-left: 0.4rem; }
+.harness-list .b { display: inline-block; width: 1rem; font-weight: 800; }
+.harness-list .b.blue   { color: var(--blue); }
+.harness-list .b.green  { color: var(--green); }
+.harness-list .b.red    { color: var(--red); }
+.harness-list .b.orange { color: var(--orange); }
+.harness-list .b.purple { color: var(--purple); }
+.prompt.md { font-size: 0.92rem; line-height: 1.55; color: var(--light); }
+.md-h    { color: var(--blue); font-weight: 700; }
+.md-em   { color: var(--orange); font-weight: 600; }
+.md-warn { color: var(--red); font-weight: 700; text-transform: uppercase; font-size: 0.85em; }
+.callout.quote-cl { padding: 1rem 1.4rem; }
+.pullq { font-size: 1.15rem; line-height: 1.5; font-style: italic; color: var(--light);
+         border: none; padding: 0; margin: 0; }
+.pullq cite { display: block; margin-top: 0.5rem; font-style: normal; color: var(--dim);
+              font-size: 0.85rem; letter-spacing: 0.04em; }
+.pullq cite a { color: var(--blue); text-decoration: none;
+                border-bottom: 1px dotted rgba(10,132,255,0.45); }
+.pullq cite a:hover { border-bottom-color: var(--blue); }
+
+/* Iterative chat (slide 16.5) */
+.chat { display: flex; flex-direction: column; gap: 0.55rem; max-width: 60rem;
+        align-self: center; width: 100%; }
+.chat-bubble { padding: 0.7rem 1rem; border-radius: 14px; max-width: 78%;
+               display: flex; flex-direction: column; gap: 0.15rem; }
+.chat-bubble p { font-size: 1rem; line-height: 1.45; }
+.chat-who { font-size: 0.7rem; letter-spacing: 0.1em; text-transform: uppercase;
+            font-weight: 700; }
+.chat-bubble.user  { align-self: flex-end; background: rgba(10,132,255,0.16);
+                     border: 1px solid rgba(10,132,255,0.3); }
+.chat-bubble.user .chat-who  { color: var(--blue); }
+.chat-bubble.agent { align-self: flex-start; background: var(--bg-card);
+                     border: 1px solid var(--line); }
+.chat-bubble.agent .chat-who { color: var(--purple); }
+
+/* Red flags grid (slide 17) */
+.rf-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.8rem;
+           align-content: start; }
+.rf-card { display: flex; gap: 0.9rem; padding: 1rem 1.1rem;
+           background: var(--bg-card); border-radius: 12px;
+           border-left: 3px solid var(--red); }
+.rf-x { font-size: 1.3rem; color: var(--red); font-weight: 800; line-height: 1.4;
+        flex-shrink: 0; }
+.rf-body h3 { font-size: 1.02rem; margin-bottom: 0.2rem; line-height: 1.3; }
+.rf-body p { font-size: 0.92rem; line-height: 1.45; }
+
+/* Quick wins grid (slide 18) */
+.qw-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.55rem 1rem;
+           align-content: center; }
+.qw-row { display: flex; align-items: center; gap: 0.9rem;
+          padding: 0.7rem 0.95rem; background: var(--bg-card); border-radius: 10px; }
+.qw-num { font-size: 1.05rem; font-weight: 800; color: var(--green);
+          font-variant-numeric: tabular-nums; min-width: 2rem;
+          font-family: 'JetBrains Mono', monospace; }
+.qw-body { flex: 1; }
+.qw-body h3 { font-size: 1.02rem; margin-bottom: 0.15rem; }
+.qw-body code { background: rgba(255,255,255,0.07); padding: 0 0.35rem;
+                border-radius: 4px; font-family: 'JetBrains Mono', monospace; font-size: 0.85em; }
+.qw-body p { font-size: 0.9rem; }
+.qw-check { font-size: 1.1rem; font-weight: 800; flex-shrink: 0; }
+
+/* Recap + final message (slide 19) */
+.recap-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 0.6rem;
+              margin-bottom: 1.4rem; }
+.recap-pill { background: var(--bg-card); border-radius: 12px; padding: 0.8rem 0.9rem;
+              display: flex; flex-direction: column; gap: 0.45rem; min-height: 100%; }
+.recap-pill > div { font-size: 0.92rem; line-height: 1.35; }
+.recap-tag { display: inline-flex; align-items: center; justify-content: center;
+             width: 2rem; height: 2rem; border-radius: 8px; font-family: 'JetBrains Mono', monospace;
+             font-weight: 800; font-size: 0.85rem; }
+.recap-tag.blue   { background: rgba(10,132,255,0.18); color: var(--blue); }
+.recap-tag.purple { background: rgba(191,90,242,0.18); color: var(--purple); }
+.recap-tag.teal   { background: rgba(100,210,255,0.18); color: var(--teal); }
+.recap-tag.orange { background: rgba(255,159,10,0.18); color: var(--orange); }
+.recap-tag.green  { background: rgba(48,209,88,0.18); color: var(--green); }
+.final-message { flex: 1; display: flex; align-items: center; justify-content: center;
+                 background: linear-gradient(135deg, rgba(10,132,255,0.08), rgba(191,90,242,0.08));
+                 border-radius: 16px; padding: 2rem; border: 1px solid var(--line); }
+.final-quote { text-align: center; font-size: 1.45rem; line-height: 1.55; max-width: 50rem; }
+.final-quote em { color: var(--blue); font-style: normal; font-weight: 700; }
+.final-quote strong { display: inline-block; margin-top: 0.3rem; font-size: 1.7rem;
+                      background: linear-gradient(90deg, var(--blue), var(--purple));
+                      -webkit-background-clip: text; background-clip: text; color: transparent; }
+.big-quote { font-size: 2.5rem; line-height: 0; color: var(--blue); margin-right: 0.3rem;
+             vertical-align: -0.4rem; }
+
+/* Q&A + resources (slide 20) */
+.qa-slide { padding-top: 3rem; }
+.qa-layout { display: grid; grid-template-columns: 1.05fr 1.4fr; gap: 2rem;
+             align-items: stretch; }
+.qa-left { display: flex; flex-direction: column; justify-content: center; gap: 0.8rem; }
+.qa-headline { font-size: 5rem; font-weight: 800; line-height: 1; letter-spacing: -0.035em;
+               background: linear-gradient(135deg, var(--blue), var(--purple));
+               -webkit-background-clip: text; background-clip: text; color: transparent; }
+.qa-meta { display: flex; flex-direction: column; gap: 0.3rem; margin-top: 1rem;
+           font-size: 0.95rem; padding-top: 1rem; border-top: 1px solid var(--line); }
+.qa-right .kicker { color: var(--blue); font-weight: 600; font-size: 0.95rem;
+                    letter-spacing: 0.04em; margin-bottom: 0.7rem; }
+.res-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem; }
+.res-grid-3 { grid-template-columns: 1fr 1fr 1fr; gap: 0.5rem; }
+.res-card { background: var(--bg-card); border-radius: 12px; padding: 0.8rem 0.95rem;
+            display: flex; flex-direction: column; gap: 0.25rem;
+            border: 1px solid var(--line); min-height: 100%; }
+.res-source { font-size: 0.65rem; letter-spacing: 0.12em; text-transform: uppercase;
+              font-weight: 700; }
+.res-card h3 { font-size: 0.92rem; line-height: 1.25; }
+.res-card p { font-size: 0.78rem; line-height: 1.4; }
+a.res-url { font-family: 'JetBrains Mono', monospace; font-size: 0.7rem;
+            color: var(--blue); padding-top: 0.35rem; border-top: 1px dashed var(--line);
+            margin-top: auto; word-break: break-all; text-decoration: none;
+            transition: color 0.15s; display: block; }
+a.res-url:hover { color: var(--text); border-top-color: var(--blue); }
+
+/* Why fail (slide 2) */
+.card.vague { border: 1px solid rgba(255,69,58,0.30); display: flex; flex-direction: column; gap: 0.7rem; }
+.card.spec-driven { border: 1px solid rgba(48,209,88,0.30); display: flex; flex-direction: column; gap: 0.7rem; }
+.vague-tag { display: inline-block; align-self: flex-start; padding: 0.2rem 0.7rem;
+             border-radius: 999px; font-size: 0.78rem; font-weight: 700;
+             letter-spacing: 0.04em; text-transform: uppercase; }
+.vague-tag.red   { background: rgba(255,69,58,0.18); color: var(--red); }
+.vague-tag.green { background: rgba(48,209,88,0.18); color: var(--green); }
+.cascade { display: flex; flex-direction: column; gap: 0.3rem; padding-top: 0.4rem;
+           border-top: 1px solid var(--line); }
+.cascade-step { font-size: 0.98rem; }
+.cascade-step .ar { font-weight: 800; margin-right: 0.5rem; display: inline-block;
+                    width: 1rem; }
+.cascade-step .ar.red   { color: var(--red); }
+.cascade-step .ar.green { color: var(--green); }
+.callout.analogy strong { color: var(--orange); }
+
+/* Industry data stats (slide 3) */
+.stat-grid { display: grid; grid-template-columns: 1fr 1fr 1fr;
+             gap: 0.8rem; align-content: stretch; }
+.stat-card { background: var(--bg-card); border-radius: 14px; padding: 1.4rem 1.5rem;
+             display: flex; flex-direction: column; gap: 0.3rem; justify-content: center;
+             border-top: 3px solid var(--line); }
+.stat-card:nth-child(1) { border-top-color: var(--green); }
+.stat-card:nth-child(2) { border-top-color: var(--blue); }
+.stat-card:nth-child(3) { border-top-color: var(--orange); }
+.stat-num { font-size: 3.2rem; font-weight: 800; line-height: 1; letter-spacing: -0.04em;
+            font-variant-numeric: tabular-nums; }
+.stat-num.green  { color: var(--green); }
+.stat-num.blue   { color: var(--blue); }
+.stat-num.purple { color: var(--purple); }
+.stat-num.orange { color: var(--orange); }
+.stat-unit { font-size: 1.2rem; font-weight: 700; opacity: 0.75; margin-left: 0.15rem;
+             letter-spacing: 0; }
+.stat-label { font-size: 1.1rem; font-weight: 600; color: var(--text);
+              margin-top: 0.15rem; }
+.stat-source { margin-top: 0.35rem; line-height: 1.4; }
+.stat-source code { background: rgba(255,255,255,0.07); padding: 0 0.35rem;
+                    border-radius: 4px; font-family: 'JetBrains Mono', monospace; font-size: 0.85em; }
+
+/* Progress + nav HUD */
+.hud { position: fixed; left: 0; right: 0; bottom: 0; height: 2px;
+       background: linear-gradient(to right, var(--blue) var(--progress, 0%),
+                                    rgba(255,255,255,0.05) var(--progress, 0%));
+       transition: background 0.2s; pointer-events: none; }
+
+/* Notes overlay */
+.notes-pane {
+  position: fixed; inset: auto 0 0 0; height: 0; overflow: auto;
+  background: rgba(8,8,10,0.96); backdrop-filter: blur(14px);
+  border-top: 1px solid var(--line); transition: height 0.25s ease;
+  padding: 0 4.5rem;
+}
+.notes-pane.open { height: 45vh; padding: 1.6rem 4.5rem; }
+.notes-pane h4 { font-size: 0.85rem; letter-spacing: 0.16em; text-transform: uppercase;
+                 color: var(--blue); margin-bottom: 0.6rem; }
+.notes-pane .note { display: none; max-width: 60rem; }
+.notes-pane .note.active { display: block; }
+.notes-pane p { font-size: 0.95rem; color: var(--light); margin-bottom: 0.7rem; line-height: 1.55; }
+
+/* Help hint */
+.hint { position: fixed; right: 1rem; bottom: 0.75rem; color: var(--dim);
+        font-size: 0.7rem; letter-spacing: 0.04em; }
+.hint kbd { background: #1a1a1f; border: 1px solid var(--line); border-radius: 4px;
+            padding: 0.05rem 0.35rem; font-family: inherit; font-size: 0.7rem; }
+</style>
+</head>
+<body>
+  <main class="deck">
+
+<section class="slide cover" data-idx="1">
+  <div class="cover-grid">
+    <div class="cover-meta">
+      <span class="dot dot-blue"></span>
+      <span class="label">AI Builders @ Habi</span>
+    </div>
+    <h1 class="cover-title">
+      AI Builders Harness<br>
+      <span class="dim">setup pre-cargado con contexto, herramientas y guardrails</span>
+    </h1>
+    <div class="cover-foot">
+      <div><span class="light">Speaker</span> · Martin Ramos Mejia</div>
+    </div>
+  </div>
+  <footer class="cover-footer">
+    <span class="page">01 / 13</span>
+  </footer>
+</section>
+
+
+<section class="slide " data-idx="2">  <header class="hdr">    <span class="eyebrow">Concepto</span>    <span class="page">02 / 13</span>  </header>
+  <div class="title-block"><div class="kicker">Como un template de Google Docs, pero para proyectos enteros</div><h1>¿Qué es un harness?</h1></div>
+  <div class="cols-2 grow">
+    <div class="card">
+      <div class="stripe bg-blue"></div>
+      <h3>📄 Template de Google Docs</h3>
+      <p class="small dim">Análogo familiar</p>
+      <p style="margin-top: 0.8rem;">Estructura pre-armada con secciones, formato y logos.</p>
+      <ul class="checklist" style="margin-top: 0.8rem; gap: 0.5rem;">
+        <li><span class="check blue">🔒</span> Lo que Plataforma mantiene → se actualiza con sync</li>
+        <li><span class="check blue">✏️</span> Espacios marcados para su contenido</li>
+      </ul>
+    </div>
+    <div class="card">
+      <div class="stripe bg-green"></div>
+      <h3>📦 AI Builders Harness</h3>
+      <p class="small dim">El mismo concepto, para proyectos enteros</p>
+      <ul class="checklist" style="margin-top: 0.8rem; gap: 0.5rem;">
+        <li><span class="check green">✓</span> Repo con estructura completa</li>
+        <li><span class="check green">✓</span> Contexto de Habi cargado para el agente</li>
+        <li><span class="check green">✓</span> Configuración de seguridad lista</li>
+        <li><span class="check green">✓</span> Secciones project-level para sus extensiones</li>
+      </ul>
+    </div>
+  </div>
+  <div class="callout mt-3">
+    <span class="bar bg-orange"></span>
+    <div>
+      <strong>Las dos capas conviven:</strong>
+      <span class="light"> la program-level que evoluciona vía sync, y la project-level que es de ustedes.</span>
+    </div>
+  </div>
+</section>
+
+
+<section class="slide " data-idx="3">  <header class="hdr">    <span class="eyebrow">Concepto</span>    <span class="page">03 / 13</span>  </header>
+  <div class="title-block"><div class="kicker">La diferencia entre arrancar desde cero y arrancar sobre una base compartida</div><h1>¿Por qué un harness?</h1></div>
+  <div class="cols-2 grow">
+    <div class="card">
+      <div class="stripe bg-red"></div>
+      <h3>❌ Sin harness · ad-hoc</h3>
+      <ul class="checklist" style="margin-top: 0.8rem; gap: 0.5rem;">
+        <li><span class="check red">→</span> El agente no sabe quién es Habi</li>
+        <li><span class="check red">→</span> Recordar las prácticas de seguridad en cada proyecto</li>
+        <li><span class="check red">→</span> Cada proyecto se parece poco al anterior</li>
+        <li><span class="check red">→</span> Mejoras de Plataforma se aplican manualmente, proyecto por proyecto</li>
+      </ul>
+    </div>
+    <div class="card">
+      <div class="stripe bg-green"></div>
+      <h3>✅ Con harness</h3>
+      <ul class="checklist" style="margin-top: 0.8rem; gap: 0.5rem;">
+        <li><span class="check green">✓</span> El agente arranca con el contexto de Habi cargado</li>
+        <li><span class="check green">✓</span> Seguridad estandarizada y automática</li>
+        <li><span class="check green">✓</span> Estructura consistente entre proyectos</li>
+        <li><span class="check green">✓</span> Mejoras de Plataforma fluyen al proyecto vía sync</li>
+      </ul>
+    </div>
+  </div>
+  <div class="callout mt-3">
+    <span class="bar bg-orange"></span>
+    <div>
+      <strong>Ustedes se concentran en el problema del proyecto,</strong>
+      <span class="light"> no en el setup de cada proyecto nuevo.</span>
+    </div>
+  </div>
+</section>
+
+
+<section class="slide " data-idx="4">  <header class="hdr">    <span class="eyebrow">Operación</span>    <span class="page">04 / 13</span>  </header>
+  <div class="title-block"><div class="kicker">Plataforma arma el repo, ustedes hacen un setup local de 5 minutos</div><h1>Cómo arranca un proyecto</h1></div>
+  <div class="callout">
+    <span class="bar bg-purple"></span>
+    <div>
+      <strong>Todo proyecto del programa — incluso prototipo mínimo —</strong>
+      <span class="light"> vive en un repositorio de la organización HabiGlobal.</span>
+    </div>
+  </div>
+  <div class="cols-2 grow mt-3">
+    <div class="card">
+      <div class="stripe bg-blue"></div>
+      <h3>🤝 Lo que hace Plataforma</h3>
+      <ul class="checklist" style="margin-top: 0.8rem; gap: 0.6rem;">
+        <li><span style="display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; border-radius: 50%; background: var(--blue); color: #fff; font-size: 0.85rem; font-weight: 700; flex-shrink: 0;">1</span> Reciben el pedido: nombre · descripción · coding agent</li>
+        <li><span style="display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; border-radius: 50%; background: var(--blue); color: #fff; font-size: 0.85rem; font-weight: 700; flex-shrink: 0;">2</span> Crean el repo <code>github.com/HabiGlobal/internal-&lt;nombre&gt;</code></li>
+        <li><span style="display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; border-radius: 50%; background: var(--blue); color: #fff; font-size: 0.85rem; font-weight: 700; flex-shrink: 0;">3</span> Les dan permisos como AI Builders del programa</li>
+      </ul>
+    </div>
+    <div class="card">
+      <div class="stripe bg-green"></div>
+      <h3>💻 Lo que hacen ustedes (5 min)</h3>
+      <pre class="mono-block" style="margin-top: 0.6rem;">$ gh repo clone HabiGlobal/internal-&lt;nombre&gt;
+$ cd internal-&lt;nombre&gt;
+$ pre-commit install</pre>
+      <p class="small dim" style="margin-top: 0.6rem;">El agente carga el contexto de Habi al abrir el proyecto.</p>
+    </div>
+  </div>
+</section>
+
+
+<section class="slide " data-idx="5">  <header class="hdr">    <span class="eyebrow">Capas del harness</span>    <span class="page">05 / 13</span>  </header>
+  <div class="title-block"><div class="kicker">Carpeta habi-harness/ con todo lo que el agente necesita saber sobre Habi</div><h1>Layer 1 — contexto de Habi</h1></div>
+  <div style="display: flex; flex-direction: column; gap: 0.6rem; margin-top: 0.6rem;">
+    <div style="display: grid; grid-template-columns: 6px 1fr; gap: 0.9rem; background: var(--bg-card); border-radius: 12px; overflow: hidden; padding: 0; align-items: stretch;">
+      <div style="background: var(--blue);"></div>
+      <div style="padding: 0.7rem 1rem 0.75rem 0;">
+        <div style="display: flex; align-items: baseline; gap: 0.7rem; flex-wrap: wrap;">
+          <h3 style="margin: 0;">📘 HABI_CONTEXT</h3>
+          <span class="small dim">Qué es Habi</span>
+        </div>
+        <p class="small" style="margin: 0.25rem 0 0;">Negocio, cultura, marca, productos (Habicredit, Habimetro, etc.), estilo de escritura.</p>
+      </div>
+    </div>
+    <div style="display: grid; grid-template-columns: 6px 1fr; gap: 0.9rem; background: var(--bg-card); border-radius: 12px; overflow: hidden; padding: 0; align-items: stretch;">
+      <div style="background: var(--purple);"></div>
+      <div style="padding: 0.7rem 1rem 0.75rem 0;">
+        <div style="display: flex; align-items: baseline; gap: 0.7rem; flex-wrap: wrap;">
+          <h3 style="margin: 0;">🏗️ HABI_PLATFORM</h3>
+          <span class="small dim">Cómo se programa en Habi</span>
+        </div>
+        <p class="small" style="margin: 0.25rem 0 0;">Arquitectura, testing, deployment, code conventions, security practices.</p>
+      </div>
+    </div>
+    <div style="display: grid; grid-template-columns: 6px 1fr; gap: 0.9rem; background: var(--bg-card); border-radius: 12px; overflow: hidden; padding: 0; align-items: stretch;">
+      <div style="background: var(--teal);"></div>
+      <div style="padding: 0.7rem 1rem 0.75rem 0;">
+        <div style="display: flex; align-items: baseline; gap: 0.7rem; flex-wrap: wrap;">
+          <h3 style="margin: 0;">🧭 HABI_GUIDELINES</h3>
+          <span class="small dim">Índice curado para AI Builders</span>
+        </div>
+        <p class="small" style="margin: 0.25rem 0 0;">Menú navegacional: a dónde mirar según la tarea (writing, code, security).</p>
+      </div>
+    </div>
+    <div style="display: grid; grid-template-columns: 6px 1fr; gap: 0.9rem; background: var(--bg-card); border-radius: 12px; overflow: hidden; padding: 0; align-items: stretch;">
+      <div style="background: var(--red);"></div>
+      <div style="padding: 0.7rem 1rem 0.75rem 0;">
+        <div style="display: flex; align-items: baseline; gap: 0.7rem; flex-wrap: wrap;">
+          <h3 style="margin: 0;">🔒 HABI_SECURITY</h3>
+          <span class="small dim">Guardrails siempre activos</span>
+        </div>
+        <p class="small" style="margin: 0.25rem 0 0;">No secrets, no PII en logs, no exfiltración, sandbox de filesystem.</p>
+      </div>
+    </div>
+  </div>
+  <div class="callout mt-3">
+    <span class="bar bg-orange"></span>
+    <div>
+      <strong>Plataforma mantiene estos 4 archivos.</strong>
+      <span class="light"> No tienen que ir a buscar el último canon de Habi — lo reciben en el proyecto.</span>
+    </div>
+  </div>
+</section>
+
+
+<section class="slide " data-idx="6">  <header class="hdr">    <span class="eyebrow">Capas del harness</span>    <span class="page">06 / 13</span>  </header>
+  <div class="title-block"><div class="kicker">3 capas de protección activas desde el primer minuto</div><h1>Layer 2 — seguridad automática</h1></div>
+  <div class="cols-3 grow">
+    <div class="card">
+      <div class="stripe bg-red"></div>
+      <h3>🔐 Checks pre-commit</h3>
+      <p class="small dim">En cada commit, antes de cerrarlo</p>
+      <p style="margin-top: 0.6rem;">Verifica si hay secrets, claves o credenciales. Si los hay, bloquea el commit.</p>
+    </div>
+    <div class="card">
+      <div class="stripe bg-blue"></div>
+      <h3>🤖 Reglas para el agente</h3>
+      <p class="small dim">Claude y Cursor pre-configurados</p>
+      <p style="margin-top: 0.6rem;">Rehúsan leer archivos con credenciales. La configuración viene cargada.</p>
+    </div>
+    <div class="card">
+      <div class="stripe bg-purple"></div>
+      <h3>🙈 Archivos ocultos</h3>
+      <p class="small dim">Gemini ni los ve</p>
+      <p style="margin-top: 0.6rem;">Para Gemini, los archivos sensibles son invisibles. Lo que no ve, no puede commitear.</p>
+    </div>
+  </div>
+  <div class="callout mt-3">
+    <span class="bar bg-orange"></span>
+    <div>
+      <strong>La protección no depende de su memoria — depende del template.</strong>
+      <span class="light"> Funciona sola, en background.</span>
+    </div>
+  </div>
+</section>
+
+
+<section class="slide " data-idx="7">  <header class="hdr">    <span class="eyebrow">Personalización</span>    <span class="page">07 / 13</span>  </header>
+  <div class="title-block"><div class="kicker">3 archivos de guía (CLAUDE.md · GEMINI.md · AGENTS.md), cada uno con 2 secciones</div><h1>Qué pueden personalizar</h1></div>
+  <div class="cols-2 grow">
+    <div class="card">
+      <div class="stripe bg-red"></div>
+      <h3>🔒 Program-level <span class="small dim">(DO NOT EDIT)</span></h3>
+      <p style="margin-top: 0.6rem;">Mantenido por Plataforma · se actualiza vía sync.</p>
+      <ul class="checklist" style="margin-top: 0.6rem; gap: 0.4rem;">
+        <li><span class="check red">→</span> Invariantes de seguridad</li>
+        <li><span class="check red">→</span> Branch strategy</li>
+        <li><span class="check red">→</span> Comportamiento esperado del agente con Habi</li>
+      </ul>
+    </div>
+    <div class="card">
+      <div class="stripe bg-green"></div>
+      <h3>✏️ Project extensions <span class="small dim">(editen libremente)</span></h3>
+      <p style="margin-top: 0.6rem;">Su espacio · persiste across syncs.</p>
+      <ul class="checklist" style="margin-top: 0.6rem; gap: 0.4rem;">
+        <li><span class="check green">+</span> Convenciones del proyecto</li>
+        <li><span class="check green">+</span> APIs externas que usan (Stripe, Twilio, etc.)</li>
+        <li><span class="check green">+</span> Workflows específicos</li>
+        <li><span class="check green">+</span> Lo que el agente debe saber sobre ESTE proyecto</li>
+      </ul>
+    </div>
+  </div>
+  <div class="callout mt-3">
+    <span class="bar bg-orange"></span>
+    <div>
+      <strong>El agente lee las dos secciones.</strong>
+      <span class="light"> La primera le da las reglas del programa; la segunda, las del proyecto.</span>
+    </div>
+  </div>
+</section>
+
+
+<section class="slide " data-idx="8">  <header class="hdr">    <span class="eyebrow">Mecánica</span>    <span class="page">08 / 13</span>  </header>
+  <div class="title-block"><div class="kicker">Plataforma evoluciona el template; ustedes reciben las mejoras con un comando</div><h1>Cómo reciben las mejoras</h1></div>
+  <div class="cols-2 grow">
+    <div class="card">
+      <div class="stripe bg-blue"></div>
+      <h3>💻 Un solo comando</h3>
+      <pre class="mono-block" style="margin-top: 0.8rem; font-size: 1rem;">$ bash scripts/sync-harness.sh</pre>
+      <p class="small dim" style="margin-top: 0.8rem;">Plataforma sigue evolucionando el template — nuevas guías, mejoras de seguridad, fixes detectados en otros proyectos del programa.</p>
+    </div>
+    <div class="card">
+      <div class="stripe bg-green"></div>
+      <h3>🔄 Qué hace el sync</h3>
+      <ul class="checklist" style="margin-top: 0.8rem; gap: 0.5rem;">
+        <li><span class="check green">✓</span> Trae lo nuevo del template</li>
+        <li><span class="check green">✓</span> Reemplaza los archivos que mantiene Plataforma</li>
+        <li><span class="check green">⚠️</span> Si su sección project-level diverge de un archivo de guía → les avisa para reconciliar</li>
+      </ul>
+    </div>
+  </div>
+  <div class="callout mt-3">
+    <span class="bar bg-orange"></span>
+    <div>
+      <strong>Como una update del sistema operativo:</strong>
+      <span class="light"> el proyecto se mantiene fresco sin re-hacerlo desde cero.</span>
+    </div>
+  </div>
+</section>
+
+
+<section class="slide " data-idx="9">  <header class="hdr">    <span class="eyebrow">Convenciones</span>    <span class="page">09 / 13</span>  </header>
+  <div class="title-block"><div class="kicker">Trunk-based + GitHub Flow · regla del programa</div><h1>Branch strategy</h1></div>
+  <div style="margin-top: 1rem; text-align: center;">
+    <pre class="mono-block" style="display: inline-block; text-align: left; font-size: 1.05rem;">main ●────●────●────●────●
+          ↘  short ↗  ↘  short ↗
+           feature      feature</pre>
+  </div>
+  <div class="cols-2 grow mt-3">
+    <div class="card">
+      <div class="stripe bg-green"></div>
+      <h3>✅ Sí usamos</h3>
+      <ul class="checklist" style="margin-top: 0.6rem; gap: 0.4rem;">
+        <li><span class="check green">→</span> Una sola branch principal: <code>main</code></li>
+        <li><span class="check green">→</span> Feature branches cortas (≤1 semana)</li>
+        <li><span class="check green">→</span> PR a main · review · merge · delete</li>
+      </ul>
+    </div>
+    <div class="card">
+      <div class="stripe bg-red"></div>
+      <h3>❌ No usamos</h3>
+      <ul class="checklist" style="margin-top: 0.6rem; gap: 0.4rem;">
+        <li><span class="check red">✗</span> Gitflow</li>
+        <li><span class="check red">✗</span> Branches <code>develop</code>/<code>release</code>/<code>hotfix</code> permanentes</li>
+        <li><span class="check red">✗</span> Feature branches de semanas o meses</li>
+      </ul>
+    </div>
+  </div>
+  <div class="callout mt-3">
+    <span class="bar bg-orange"></span>
+    <div>
+      <strong>El agente lo conoce.</strong>
+      <span class="light"> En C1 opera como convención; desde C2 el enforcement es automático (PR + 1 approval + checks).</span>
+    </div>
+  </div>
+</section>
+
+
+<section class="slide " data-idx="10">  <header class="hdr">    <span class="eyebrow">Tools</span>    <span class="page">10 / 13</span>  </header>
+  <div class="title-block"><div class="kicker">3 opciones, todas con el mismo harness aplicado</div><h1>Coding agents oficiales</h1></div>
+  <div class="cols-3 grow">
+    <div class="card">
+      <div class="stripe bg-orange"></div>
+      <h3>🤖 Claude Code</h3>
+      <p class="small dim">Anthropic</p>
+      <p style="margin-top: 0.6rem;">CLI desde terminal + plugin para IDEs (VS Code, JetBrains).</p>
+      <p class="small" style="margin-top: 0.8rem;"><strong>Solicitar licencia:</strong></p>
+      <p class="small">Martin Ramos Mejia</p>
+    </div>
+    <div class="card">
+      <div class="stripe bg-blue"></div>
+      <h3>📝 Cursor</h3>
+      <p class="small dim">IDE standalone</p>
+      <p style="margin-top: 0.6rem;">Como un VS Code pero con el agente integrado nativamente.</p>
+      <p class="small" style="margin-top: 0.8rem;"><strong>Solicitar seat:</strong></p>
+      <p class="small">Martin Ramos Mejia</p>
+    </div>
+    <div class="card">
+      <div class="stripe bg-purple"></div>
+      <h3>✨ Gemini CLI</h3>
+      <p class="small dim">Google</p>
+      <p style="margin-top: 0.6rem;">CLI integrado con la cuenta corporativa de Google de Habi (<code>@habi.co</code>).</p>
+      <p class="small" style="margin-top: 0.8rem;"><strong>Si hay problema de acceso:</strong></p>
+      <p class="small">Víctor Pinzón</p>
+    </div>
+  </div>
+  <div class="callout mt-3">
+    <span class="bar bg-orange"></span>
+    <div>
+      <strong>El harness aplica de la misma manera a los tres.</strong>
+      <span class="light"> Pueden cambiar de agente sin perder el shape del proyecto.</span>
+    </div>
+  </div>
+</section>
+
+
+<section class="slide " data-idx="11">  <header class="hdr">    <span class="eyebrow">Roadmap</span>    <span class="page">11 / 13</span>  </header>
+  <div class="title-block"><div class="kicker">3 dimensiones de crecimiento del programa</div><h1>Cómo va a evolucionar el harness</h1></div>
+  <div class="cols-3 grow">
+    <div class="card">
+      <div class="stripe bg-blue"></div>
+      <h3>📚 Más contexto (Layer 1)</h3>
+      <ul class="checklist" style="margin-top: 0.6rem; gap: 0.4rem;">
+        <li><span class="check blue">+</span> Más guías de cómo programamos</li>
+        <li><span class="check blue">+</span> Contexto de seguridad expandido</li>
+        <li><span class="check blue">+</span> Catálogo de APIs, modelo de datos</li>
+      </ul>
+    </div>
+    <div class="card">
+      <div class="stripe bg-green"></div>
+      <h3>🛠️ Más capacidades (Layer 2)</h3>
+      <ul class="checklist" style="margin-top: 0.6rem; gap: 0.4rem;">
+        <li><span class="check green">+</span> Restricciones según tipo de proyecto</li>
+        <li><span class="check green">+</span> Quality gates pre-merge</li>
+        <li><span class="check green">+</span> Métricas del programa</li>
+      </ul>
+    </div>
+    <div class="card">
+      <div class="stripe bg-purple"></div>
+      <h3>🚀 Más AI Builders</h3>
+      <ul class="checklist" style="margin-top: 0.6rem; gap: 0.4rem;">
+        <li><span class="check purple">C1</span> Esta semana · 4-5 personas</li>
+        <li><span class="check purple">C2</span> Próxima semana · 10-15</li>
+        <li><span class="check purple">C3</span> Junio · abierto a todos</li>
+      </ul>
+    </div>
+  </div>
+  <div class="callout mt-3">
+    <span class="bar bg-orange"></span>
+    <div>
+      <strong>Ustedes reciben las mejoras vía sync.</strong>
+      <span class="light"> Su feedback de esta cohorte define qué se prioriza después.</span>
+    </div>
+  </div>
+</section>
+
+
+<section class="slide " data-idx="12">  <header class="hdr">    <span class="eyebrow">Cierre</span>    <span class="page">12 / 13</span>  </header>
+  <div class="title-block"><div class="kicker">¿Y ahora qué? · acciones C1 + camino a producción</div><h1>Próximos pasos</h1></div>
+  <div class="cols-2 grow">
+    <div class="card">
+      <div class="stripe bg-green"></div>
+      <h3>🎯 Esta semana · C1</h3>
+      <ul class="checklist" style="margin-top: 0.6rem; gap: 0.45rem;">
+        <li style="font-size: 0.95rem; line-height: 1.4; overflow-wrap: anywhere; word-break: break-word;"><span class="check green">☐</span> Plataforma arma el repo <code style="font-size: 0.85em; background: rgba(255,255,255,0.07); padding: 0.05rem 0.35rem; border-radius: 4px; white-space: normal; overflow-wrap: anywhere;">HabiGlobal/internal-&lt;nombre&gt;</code></li>
+        <li style="font-size: 0.95rem; line-height: 1.4; overflow-wrap: anywhere; word-break: break-word;"><span class="check green">☐</span> Setup local (5 min): clone + <code style="font-size: 0.85em; background: rgba(255,255,255,0.07); padding: 0.05rem 0.35rem; border-radius: 4px; white-space: normal; overflow-wrap: anywhere;">pre-commit install</code></li>
+        <li style="font-size: 0.95rem; line-height: 1.4; overflow-wrap: anywhere; word-break: break-word;"><span class="check green">☐</span> Cargar el contexto de Habi (clone del canon)</li>
+        <li style="font-size: 0.95rem; line-height: 1.4; overflow-wrap: anywhere; word-break: break-word;"><span class="check green">☐</span> Empezar a construir</li>
+        <li style="font-size: 0.95rem; line-height: 1.4; overflow-wrap: anywhere; word-break: break-word;"><span class="check green">☐</span> Retro al cierre de la cohorte (próximo lunes)</li>
+      </ul>
+    </div>
+    <div class="card">
+      <div class="stripe bg-purple"></div>
+      <h3>🚀 Camino a producción</h3>
+      <p style="margin-top: 0.6rem; font-size: 0.95rem;"><strong>Si hoy ya se sienten listos:</strong></p>
+      <p class="small" style="margin-top: 0.25rem;">→ Coordinar con su referente técnico de área <strong>+</strong> Plataforma <strong>+</strong> Seguridad.</p>
+      <p style="margin-top: 0.9rem; font-size: 0.95rem;"><strong>Primer paso del camino pavimentado:</strong></p>
+      <p class="small" style="margin-top: 0.25rem;">→ Eventualmente los proyectos podrán moverse a entorno interno de Habi sin re-arquitectura.</p>
+    </div>
+  </div>
+  <div class="callout mt-3">
+    <span class="bar bg-orange"></span>
+    <div style="font-size: 0.95rem;">
+      <strong>Soporte:</strong>
+      <span class="light"> Comunidad de AI Builders en Google Chat · la primera persona que pregunta, sirve a todos.</span>
+    </div>
+  </div>
+</section>
+
+
+<section class="slide " data-idx="13">  <header class="hdr">    <span class="eyebrow">Cierre</span>    <span class="page">13 / 13</span>  </header>
+  <div style="flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1.6rem; text-align: center;">
+    <div style="font-size: 1rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--blue); font-weight: 700;">Q &amp; A</div>
+    <h1 style="font-size: 4.2rem; font-weight: 800; letter-spacing: -0.03em; margin: 0; line-height: 1.05;">
+      ¿Qué dudas <span style="background: linear-gradient(90deg, var(--blue), var(--purple)); -webkit-background-clip: text; background-clip: text; color: transparent;">tienen</span>?
+    </h1>
+    <p class="small dim" style="margin: 0; max-width: 720px;">
+      Soporte continuo en la Comunidad de AI Builders en Google Chat · retro al cierre de la cohorte
+    </p>
+  </div>
+</section>
+
+  </main>
+  <div class="hud" style="--progress: 0%"></div>
+  <aside class="notes-pane">
+<article class="note" data-idx="1"><h4>Slide 01</h4><p><strong>[1 minuto]</strong></p><p>Hola a todos. La charla anterior fue sobre Git/GitHub — la base que necesitan para colaborar en código. Hoy vamos al siguiente nivel: <strong>el harness del programa AI Builders</strong>, que es el primer entorno real donde lo van a usar.</p><p>En 30 minutos vamos a ver tres cosas. Primero: <strong>qué es el harness</strong> y cómo lo van a usar en sus proyectos. Segundo: <strong>cómo se le va a agregar contexto de trabajo</strong> a medida que el programa crece. Tercero: <strong>qué herramientas y guardrails</strong> tiene su coding agent cuando trabaja sobre los proyectos del programa.</p><p>La idea es que al final del bloque tengan claro por dónde arrancar su primer proyecto, cómo extender el template con contexto específico, y cómo el harness les ahorra el setup repetitivo.</p></article>
+<article class="note" data-idx="2"><h4>Slide 02</h4><p><strong>[3 minutos]</strong></p><p>Para entender qué es un harness, piensen en un <strong>template de Google Docs</strong>. Cuando arrancan un documento desde un template — una propuesta comercial, un kickoff de proyecto — no parten de una hoja en blanco. El template ya trae el logo de la empresa, las secciones con headers, el formato. Algunas partes son fijas (logo, footer legal) y otras les piden llenar contenido específico ("aquí va el nombre del cliente"). Si modifican las fijas manualmente, el próximo update del template las sobreescribe.</p><p>El harness del programa AI Builders es exactamente eso, pero para <strong>proyectos enteros</strong> de código. Cuando arrancan un proyecto del programa, no parten de un repo vacío. Reciben un repo donde ya están:</p><p>- La estructura de carpetas armada.<br>- El contexto de Habi cargado para que el agente sepa quién es Habi, qué productos tenemos, cómo trabajamos.<br>- La configuración de seguridad lista.<br>- Secciones marcadas donde ustedes agregan el contexto específico del proyecto: "este proyecto usa Stripe", "este proyecto tiene un workflow de aprobación", etc.</p><p>Cuando Plataforma actualiza el template, ustedes reciben las mejoras sin perder su contexto de proyecto. Las dos capas conviven: la program-level que evoluciona, y la project-level que es de ustedes.</p></article>
+<article class="note" data-idx="3"><h4>Slide 03</h4><p><strong>[2 minutos]</strong></p><p>El harness es la diferencia entre <strong>construir cada proyecto desde cero</strong> y <strong>construir sobre una base compartida</strong>.</p><p>Sin harness, cada vez que arrancan un proyecto, su agente parte sin saber nada de Habi. Tienen que explicarle qué productos tenemos, cuáles son nuestras conventions, cómo manejamos seguridad. Ustedes terminan repitiendo el setup en cada proyecto. Y si Plataforma mejora algo, tienen que ir proyecto por proyecto aplicándolo.</p><p>Con el harness, todo eso ya está cargado el primer día. El agente abre el proyecto y ya sabe qué es Habi. Las prácticas de seguridad están activas y no dependen de que ustedes las recuerden. La estructura es la misma entre proyectos. Y cuando Plataforma actualiza algo, corren un comando y reciben las mejoras.</p><p>El punto importante: <strong>el harness les saca de encima el trabajo de armar cada proyecto desde cero</strong>. Ustedes se concentran en el problema del proyecto, no en el plumbing.</p></article>
+<article class="note" data-idx="4"><h4>Slide 04</h4><p><strong>[3 minutos]</strong></p><p>Antes de entrar en el flujo, una regla del programa: <strong>todo proyecto que armen como AI Builder vive en un repositorio de la organización HabiGlobal</strong>, incluso si es solo un prototipo mínimo o una prueba de concepto. No trabajamos en repos personales o en local sin push — todo lo que se construye dentro del programa queda en `HabiGlobal/`. Esto nos da visibilidad, governance compartida y la capacidad de aplicar mejoras del template a todos los proyectos a la vez.</p><p>Con esa premisa clara, el flujo es así.</p><p>Primero, le piden a Plataforma que les arme el proyecto. La información mínima a compartir: nombre del proyecto, descripción corta de qué hace, y qué coding agent oficial van a usar.</p><p>Segundo, <strong>Plataforma crea el repositorio</strong> en la organización HabiGlobal con el naming convention del programa: `internal-&lt;nombre&gt;`. Por ejemplo, `internal-property-search`, `internal-lead-router`. Todos los repos del programa llevan ese prefijo `internal-` para identificarlos rápidamente y, eventualmente, poder moverlos a entorno interno cuando estén listos. Plataforma también les configura los permisos como miembros del programa.</p><p>Tercero, ustedes reciben el acceso al repo automáticamente. Ese repo ya viene con la estructura del harness completa: las carpetas con el contexto de Habi, los archivos de configuración del agente, los hooks de seguridad — todo listo.</p><p>Cuarto, el setup local toma cinco minutos. Clonan el repo, instalan los pre-commit hooks, y ya están listos. Cuando el agente abre el proyecto, carga el contexto de Habi automáticamente.</p><p>Si quieren tener más de un proyecto del programa, repiten el flujo. Cada proyecto vive en su propio repo `internal-&lt;nombre&gt;`.</p></article>
+<article class="note" data-idx="5"><h4>Slide 05</h4><p><strong>[3 minutos]</strong></p><p>La parte central del harness es lo que llamamos <strong>Layer 1: el contexto organizacional</strong>. Cuando abren el proyecto, el agente tiene acceso a una carpeta `habi-harness/` con cuatro archivos que le dan, en conjunto, todo lo que necesita saber sobre Habi para trabajar con sentido.</p><p>El primero es <strong>HABI_CONTEXT</strong>. Acá está el "quién es Habi": el negocio, los productos que tenemos (Market Maker, Habicredit, Habimetro, Inmobiliaria, Pulppo), la cultura, los principios operativos, la marca, el estilo de escritura. Si le piden al agente que redacte un mail de comunicación al usuario, el agente arranca con el tono correcto porque consultó este archivo.</p><p>El segundo es <strong>HABI_PLATFORM</strong>. Acá está el "cómo se programa en Habi": la arquitectura que usamos, los patterns de testing, deployment, code conventions, security practices. Si le piden al agente que arme un endpoint con FastAPI, arranca con las convenciones que ya tenemos definidas — no inventa.</p><p>El tercero es <strong>HABI_GUIDELINES</strong>. Es un índice curado, pensado específicamente para AI Builders. Funciona como un menú: "para writing → consultar HABI_CONTEXT", "para code → consultar HABI_PLATFORM", "para security → HABI_SECURITY". El agente lo usa para navegar el resto del contexto eficientemente.</p><p>El cuarto es <strong>HABI_SECURITY</strong>. Los guardrails de seguridad: no commitear secrets, no loggear PII, no exfiltrar código fuera de Habi, sandbox de filesystem. Son los cuatro límites que están siempre activos.</p><p>Lo importante: <strong>estos cuatro archivos los mantiene Plataforma</strong>. No tienen que ir a buscar el último canon de Habi — lo reciben en el proyecto.</p></article>
+<article class="note" data-idx="6"><h4>Slide 06</h4><p><strong>[3 minutos]</strong></p><p>El harness no solo carga el contexto de Habi para el agente — también trae la <strong>seguridad automática del programa</strong>. Tres capas que funcionan en background sin que ustedes tengan que pensarlas.</p><p><strong>Primero, los checks pre-commit.</strong> Antes de que un commit se cierre — ya sea uno que ustedes hacen manualmente o uno que el agente hace por ustedes — se ejecutan automáticamente algunos chequeos. Buscan si hay secretos en el código (cosas como API keys, tokens, contraseñas), si hay archivos `.env` con credenciales reales, si hay claves privadas embebidas, archivos enormes, conflictos sin resolver. Si encuentran algo, el commit no entra. Tienen que corregirlo y volver a intentar.</p><p><strong>Segundo, las reglas para el coding agent.</strong> Cada agente oficial del programa llega configurado de fábrica. Claude Code rehúsa leer archivos sensibles — si le piden "miremos qué hay en el `.env`", responde "no puedo, está bloqueado". Cursor tiene reglas equivalentes. Esto significa que el agente, incluso si ustedes se distraen, no va a abrir un archivo de credenciales y dejarlo en su contexto.</p><p><strong>Tercero, archivos sensibles ocultos.</strong> En el caso de Gemini, los archivos sensibles son literalmente invisibles para el agente — ni siquiera aparecen en su listado de archivos. Es como si no existieran. Lo que el agente no ve, no puede commitear.</p><p>El resultado de las tres capas: <strong>ustedes no tienen que recordar "no leer el .env" o "no commitear ese token"</strong>. La seguridad está activa desde el primer minuto. Si algo se les pasa, se bloquea automáticamente. La protección no depende de su memoria — depende del template.</p></article>
+<article class="note" data-idx="7"><h4>Slide 07</h4><p><strong>[3 minutos]</strong></p><p>Hasta ahora vimos lo que el harness les da. Ahora vamos a lo que <strong>ustedes le agregan al harness</strong>.</p><p>Cada proyecto del programa tiene tres archivos de guía que el coding agent lee al arrancar: <strong>CLAUDE.md, GEMINI.md y AGENTS.md</strong>. Los tres tienen la misma estructura interna: dos secciones claramente marcadas con emojis y comentarios.</p><p>La primera sección — la que tiene el candado 🔒 — es <strong>program-level</strong>. Acá están las reglas que aplican a todo proyecto del programa: las invariantes de seguridad, la branch strategy, el comportamiento esperado del agente con Habi. Esta sección la mantiene Plataforma — si la modifican manualmente, el sync lo va a detectar y pedir reconciliación.</p><p>La segunda sección — la que tiene el lápiz ✏️ — es <strong>project extensions</strong>. Esto es <strong>su espacio</strong>. Es donde agregan todo lo que el agente necesita saber para trabajar bien en _este_ proyecto puntual. Por ejemplo: "este proyecto usa Stripe para pagos, los tests viven en `tests/` y corren con pytest, hay un workflow de approval antes de mergear a main". Cualquier convención, librería, regla específica del proyecto va aquí. Esta sección no se toca cuando Plataforma actualiza la parte program-level — las dos capas conviven.</p><p>Son tres archivos distintos porque cada coding agent oficial lee uno principalmente (Claude → CLAUDE.md, Gemini → GEMINI.md, AGENTS.md → varios). En la práctica, pueden poner el mismo contenido en los tres si usan más de un agente, o concentrarse en el archivo del agente que más usan.</p><p>En resumen: <strong>el harness les da una base común; ustedes le agregan el contexto específico del proyecto en la sección marcada para eso</strong>.</p></article>
+<article class="note" data-idx="8"><h4>Slide 08</h4><p><strong>[2 minutos]</strong></p><p>El último mecanismo es el <strong>sync</strong>. Plataforma sigue evolucionando el template todo el tiempo — agregando nuevas guías de Habi, mejorando la seguridad, corrigiendo cosas que se detectan en otros proyectos del programa. Ustedes reciben esas mejoras corriendo un solo comando: `bash scripts/sync-harness.sh`.</p><p>Cuando corren el sync, dos cosas pasan. Primero, los archivos que mantiene Plataforma — los configs de seguridad, los archivos de Layer 1, los hooks — se reemplazan con la versión nueva del template. No hay nada que decidir ahí; el sync los actualiza automáticamente.</p><p>Segundo, para los archivos de guía donde ustedes tienen su sección project-level — CLAUDE.md, GEMINI.md, AGENTS.md — el sync compara con la nueva versión del template. Si detecta cambios, les muestra el diff y les pide que reconcilien manualmente: "estos son los cambios del template, estos son los suyos, decidan qué incorporar". Es un trade-off: más control, menos automatización, porque ahí ustedes tienen contenido propio que no se puede sobreescribir a ciegas.</p><p>La analogía: el sync es como una update del sistema operativo. El sistema mejora, pero sus aplicaciones y archivos personales se mantienen. El proyecto se queda fresco sin que tengan que rehacerlo desde cero cada vez que Plataforma libera una mejora.</p></article>
+<article class="note" data-idx="9"><h4>Slide 09</h4><p><strong>[2 minutos]</strong></p><p>Una regla del programa que vale la pena enfatizar: <strong>trunk-based development con GitHub Flow</strong> — lo mismo que vieron en la charla anterior, pero acá no es opción, es regla del programa. Una branch principal, feature branches cortas (idealmente menos de una semana), PR a main, merge, delete.</p><p>Lo que no usamos: gitflow, branches `develop`/`release`/`hotfix` permanentes, feature branches que viven semanas o meses. Si una branch dura más de una semana, es señal de que hay que cortar el trabajo en pedazos más chicos.</p><p>El agente conoce esta convención — está documentada en `HABI_GUIDELINES.md`. Si le piden que cree una branch `develop`, puede recordarles que el programa usa trunk-based.</p><p>Un detalle operacional para esta primera cohorte: la regla opera como <strong>convención</strong>, no hay enforcement automático de branch protection sobre `main`. A partir de la próxima cohorte el enforcement se activa: PR + 1 approval + checks antes de mergear. Lo que practiquen esta semana, después va a estar enforced.</p></article>
+<article class="note" data-idx="10"><h4>Slide 10</h4><p><strong>[2 minutos]</strong></p><p>El programa tiene tres coding agents oficiales: <strong>Claude Code, Cursor, y Gemini CLI</strong>. Los tres están validados por Cyberseguridad y tienen licencias resueltas para que ustedes los usen.</p><p><strong>Claude Code</strong> es el agente de Anthropic. Tiene dos formatos: una CLI que se usa desde la terminal, y un plugin para los IDEs principales (VS Code, JetBrains, etc.). Para pedir licencia, me escriben a mí — soy el owner del seat allocation para Claude en el programa.</p><p><strong>Cursor</strong> es un IDE standalone. Es como un VS Code pero con el agente integrado nativamente. Para pedir seat, también me escriben a mí.</p><p><strong>Gemini CLI</strong> es el agente de Google. Se usa desde terminal y está conectado a la cuenta corporativa de Google de Habi — si tienen su cuenta `@habi.co` activa, ya tienen acceso. Si hay algún problema de licenciamiento o acceso, escribir a Víctor Pinzón de Cyberseguridad.</p><p>La parte importante para ustedes: <strong>el harness aplica de la misma manera a los tres</strong>. Las reglas de seguridad están configuradas para los tres agentes. El contexto de Habi está disponible para los tres. Si arrancan con Claude y después prueban Cursor, no hay que cambiar nada del proyecto — el shape se mantiene. Pueden elegir según preferencia, según el caso de uso, o probar varios y decidir.</p></article>
+<article class="note" data-idx="11"><h4>Slide 11</h4><p><strong>[3 minutos]</strong></p><p>El harness que les estamos entregando hoy es <strong>versión 1</strong>. Va a seguir creciendo a lo largo del programa, en tres dimensiones.</p><p><strong>Primero, más contexto de Habi en el Layer 1.</strong> Hoy tienen 4 archivos en `habi-harness/`: CONTEXT, PLATFORM, GUIDELINES y SECURITY. A lo largo del programa esos se van a enriquecer: aid-sdlc va a tener más material sobre cómo programamos en Habi, Cyberseguridad va a expandir el contenido de SECURITY con sus políticas concretas, y vamos a sumar archivos nuevos cuando tenga sentido — un catálogo de APIs internas, un puntero al modelo de datos de OCD, lo que el agente necesite para no inventar nada de Habi.</p><p><strong>Segundo, más capacidades en la seguridad y tooling.</strong> Hoy tienen el baseline mínimo: detección de secrets, deny patterns, branch strategy. A futuro vamos a sumar restricciones más finas según el tipo de proyecto, quality gates antes de mergear, integración con el data sandbox que está armando OCD, y métricas para entender cómo está corriendo el programa. Todo eso llega vía sync.</p><p><strong>Tercero, más AI Builders en el programa.</strong> El rollout es en cohortes. Ustedes son la primera, esta semana — 4 o 5 personas. Validamos con ustedes el flow, vemos qué fricciones aparecen, qué falta. La próxima cohorte arranca el lunes próximo, entre 10 y 15 personas. Y a partir de junio, el programa se abre a todos los AI Builders de Habi.</p><p>El punto importante: <strong>ustedes reciben las mejoras vía sync, sin tener que rehacer nada</strong>. Y — esto es clave — <strong>el feedback de esta cohorte define qué se prioriza después</strong>. Las fricciones que detecten ustedes son los inputs para lo que Plataforma desarrolla la próxima semana. Por eso es importante reportar todo: lo que no funciona, lo que falta, lo que sobra.</p></article>
+<article class="note" data-idx="12"><h4>Slide 12</h4><p><strong>[3 minutos]</strong></p><p>Para cerrar: los próximos pasos están listados arriba — request del repo a Plataforma, setup local, cargar el canon, empezar a construir, retro al cierre de la semana. La retro es importante: alimenta lo que arreglamos para C2.</p><p>Dos puntos importantes. <strong>Primero, sobre pasar el proyecto a producción.</strong> Si hoy alguno ya siente que está listo para ir a producción, el path es claro: coordinar con su referente técnico de área, más Plataforma, más Seguridad. Esa terna define cómo se hace el handoff. La regla es simple: no se va a producción solos.</p><p><strong>Segundo, sobre dónde va el programa.</strong> Lo que están haciendo hoy es el <strong>primer paso del camino pavimentado</strong> hacia entorno interno de Habi. Cuando lleguemos a la próxima versión del programa, sus proyectos van a poder graduar a entornos internos — sandbox primero, después interno — sin tener que re-arquitecturar el proyecto. El shape del harness está pensado desde el inicio para esa transición.</p><p>Para soporte durante la cohorte: las dudas y consultas las pueden hacer escribiendo en la <strong>Comunidad de AI Builders en Google Chat</strong>. Si surge cualquier fricción, pregunten ahí. Las respuestas las ven el resto, así que la primera persona que pregunte sirve a todos.</p><p>Con eso pasamos a Q&amp;A.</p></article>
+<article class="note" data-idx="13"><h4>Slide 13</h4><p><strong>[abierto · ~5 minutos según tiempo]</strong></p><p>Espacio abierto para preguntas. Algunas que pueden venir y respuestas cortas:</p><p>- <strong>"¿Y si quiero usar otro agente?"</strong> → En C1 nos quedamos con los tres oficiales (Claude, Cursor, Gemini). Si emerge necesidad concreta, lo evaluamos en la retro.<br>- <strong>"¿Qué pasa si rompo el harness sin querer?"</strong> → Los archivos mecánicos están protegidos a nivel de tool y a nivel de pre-commit. Es difícil romperlos sin notarlo. Si pasa, el sync los restituye.<br>- <strong>"¿Puedo usar el harness en un repo personal?"</strong> → No para proyectos del programa — todos viven en `HabiGlobal/internal-*`. Para experimentos personales fuera del programa, podemos hablarlo aparte.<br>- <strong>"¿Cuándo viene el próximo sync?"</strong> → Vamos a comunicarlo en la Comunidad de AI Builders en Google Chat cuando haya una versión nueva del template. No es push automático — ustedes deciden cuándo correr el sync.</p></article>
+  </aside>
+  <div class="hint">← → navegar · <kbd>n</kbd> notas · <kbd>f</kbd> fullscreen</div>
+<script>
+(function () {
+  const slides = Array.from(document.querySelectorAll('.slide'));
+  const notes = Array.from(document.querySelectorAll('.notes-pane .note'));
+  const total = slides.length;
+  const hud = document.querySelector('.hud');
+  const notesPane = document.querySelector('.notes-pane');
+
+  function go(n) {
+    n = Math.max(1, Math.min(total, n));
+    slides.forEach(s => s.classList.toggle('active', +s.dataset.idx === n));
+    notes.forEach(s => s.classList.toggle('active', +s.dataset.idx === n));
+    hud.style.setProperty('--progress', (n / total * 100) + '%');
+    if (location.hash !== '#' + n) history.replaceState(null, '', '#' + n);
+  }
+  function current() {
+    return parseInt((location.hash || '#1').slice(1), 10) || 1;
+  }
+  function toggleNotes() { notesPane.classList.toggle('open'); }
+
+  document.addEventListener('keydown', (e) => {
+    if (e.target.matches('input, textarea')) return;
+    if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown') { e.preventDefault(); go(current() + 1); }
+    else if (e.key === 'ArrowLeft' || e.key === 'PageUp') { e.preventDefault(); go(current() - 1); }
+    else if (e.key === 'Home') go(1);
+    else if (e.key === 'End') go(total);
+    else if (e.key === 'n' || e.key === 'N') toggleNotes();
+    else if (e.key === 'f' || e.key === 'F') {
+      if (!document.fullscreenElement) document.documentElement.requestFullscreen();
+      else document.exitFullscreen();
+    }
+  });
+
+  // Click left/right halves to navigate
+  document.addEventListener('click', (e) => {
+    if (e.target.closest('a, button, .notes-pane')) return;
+    const w = window.innerWidth;
+    if (e.clientX < w * 0.35) go(current() - 1);
+    else if (e.clientX > w * 0.65) go(current() + 1);
+  });
+
+  window.addEventListener('hashchange', () => go(current()));
+  go(current());
+})();
+</script>
+</body>
+</html>
